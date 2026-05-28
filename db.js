@@ -371,10 +371,9 @@ class CondoDatabase {
   }
 
   resetToDefault() {
-    localStorage.removeItem("CONDO_RESIDENTS");
-    localStorage.removeItem("CONDO_TRANSACTIONS");
-    localStorage.removeItem("CONDO_FUNDO_RESERVA");
-    this.initializeLocalDB();
+    localStorage.setItem("CONDO_RESIDENTS", JSON.stringify([]));
+    localStorage.setItem("CONDO_TRANSACTIONS", JSON.stringify([]));
+    localStorage.setItem("CONDO_FUNDO_RESERVA", "0");
   }
 
   // ------- Sync local → Turso -------

@@ -34,10 +34,12 @@
 
 ## Done ✓
 
-### 27/05/2026 - Renomeio do App
+### 27/05/2026 — Renomeio + Reset de Dados
 - Nome alterado de **CondoAdmin Pro** → **GestãoApp**
 - Pasta renomeada de `appcondominio` → `GestaoApp`
 - Atualizados: `index.html` (title, header, config desc), `manifest.json` (name, short_name), `ai.js`, `app.js`, `db.js`
+- `implementation_plan.md` → `implementation.md`
+- `resetToDefault()` alterado em `db.js:373` para limpar dados (arrays vazios) ao invés de recriar defaults
 
 ## Verification Plan
 ### Automated Tests
