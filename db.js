@@ -1,5 +1,5 @@
 /**
- * CondoAdmin Pro - Database Driver (Hybrid: Turso + LocalStorage)
+ * GestãoApp - Database Driver (Hybrid: Turso + LocalStorage)
  * 
  * Architecture:
  *   - LocalStorage is always the primary store (works offline).

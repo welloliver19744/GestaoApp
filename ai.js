@@ -1,5 +1,5 @@
 /**
- * CondoAdmin Pro - Real AI Assistant (OpenAI Compatible)
+ * GestãoApp - Real AI Assistant (OpenAI Compatible)
  */
 
 class CondoAI {
@@ -40,7 +40,7 @@ class CondoAI {
     const todayDate = new Date().toISOString().split("T")[0];
 
     // Build System Prompt
-    const systemPrompt = `Você é o CondoAdmin AI, o assistente inteligente de gestão do condomínio.
+    const systemPrompt = `Você é o GestãoApp AI, o assistente inteligente de gestão do condomínio.
     
 INFORMAÇÕES ATUAIS DO CONDOMÍNIO (HOJE: ${todayDate}):
 - Saldo em Caixa: R$ ${saldo.toFixed(2)}

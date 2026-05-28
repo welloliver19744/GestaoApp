@@ -1,5 +1,5 @@
 /**
- * CondoAdmin Pro - Main Application Controller
+ * GestãoApp - Main Application Controller
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -870,7 +870,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             location.reload();
           }
         } catch (err) {
-          alert("Arquivo inválido. Certifique-se de que é um JSON exportado do CondoAdmin.");
+          alert("Arquivo inválido. Certifique-se de que é um JSON exportado do GestãoApp.");
         }
       };
       reader.readAsText(file);

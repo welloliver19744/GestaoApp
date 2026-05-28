@@ -1,6 +1,6 @@
 {
-  "name": "CondoAdmin Pro",
-  "short_name": "CondoAdmin",
+  "name": "GestãoApp",
+  "short_name": "GestãoApp",
   "description": "Aplicativo para gerenciamento completo e inteligente de fluxo de caixa e moradores do condomínio.",
   "start_url": "./index.html",
   "display": "standalone",
