@@ -10,6 +10,7 @@ import { Transactions } from './pages/Transactions'
 import { Recurring } from './pages/Recurring'
 import { Settings } from './pages/Settings'
 import { Goals } from './pages/Goals'
+import { ReceiptGallery } from './pages/ReceiptGallery'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/recurring" element={<Recurring />} />
             <Route path="/goals" element={<Goals />} />
+            <Route path="/receipts" element={<ReceiptGallery />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
