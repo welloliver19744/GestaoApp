@@ -137,3 +137,15 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Tema claro:** classe `.light` no HTML com paleta invertida (sem mudar componentes)
 - **SW caching:** StaleWhileRevalidate para GET, NetworkOnly para mutations
 - **Rate limit:** Nginx level (não PocketBase) para simplicidade
+
+## Ideias para Próximas Features
+- Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
+- Notificações WhatsApp/Telegram
+- Tags/labels nas transações (emergência, lazer, essencial)
+- Importação de CSV (extrato bancário)
+- App mobile nativo (Capacitor/Tauri)
+- Dashboard customizável (usuário escolhe cards)
+- Metas compartilhadas (grupo contribui para mesma meta)
+- Modo escuro automático (follow system)
+- Scanner de código de barras para notas fiscais
+- Suporte a mais idiomas (inglês, espanhol)
