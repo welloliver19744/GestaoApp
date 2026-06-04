@@ -33,12 +33,11 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 - **Frontend:** tipos atualizados, componente `ShareModal` que lista usuários (via `fetchUsers`), botão de compartilhamento nos cards, badge indicando que está compartilhada, payload inclui `created_by`.
 - **Back‑fill:** script para popular `created_by` nos registros existentes.
 - **Teste manual:** verificado que o usuário A cria, compartilha com B, B vê; usuários não compartilhados não veem.
-### 11. Segurança e Infraestrutura (pronto, só aplicar)
-- `scripts/fail2ban.conf` – protecção SSH (5 tentativas, ban 1 h).
-- `scripts/setup_ufw.sh` – regras UFW (SSH, 80/443, 8091). 
-- `scripts/healthcheck.sh` – verifica `/api/health` do PocketBase.
-- `.github/workflows/ci.yml` – CI/CD no GitHub Actions (checkout, npm ci, lint, build, testes, TruffleHog). 
-- Guia de aplicação (`SECURITY_SETUP_GUIDE.md`).
+### 11. Segurança e Infraestrutura (aplicado no servidor)
+- **Fail2Ban:** instalado e ativo, config `/etc/fail2ban/jail.local` (5 tentativas, ban 1 h).
+- **UFW:** instalado e ativo, regras: SSH (22), HTTP (80), HTTPS (443), API (8091), Nginx (3001).
+- **Health‑check:** script em `/home/ubuntu/gestaocasa/scripts/healthcheck.sh`, agendado via systemd timer a cada 5 min.
+- `.github/workflows/ci.yml` – CI/CD no GitHub Actions (checkout, npm ci, lint, build, testes, TruffleHog).
 ### 12. Correção de deploy
 - **Problema:** Nginx retornava 403 Forbidden porque o diretório `dist/` estava com permissão `700` (não legível pelo nginx).
 - **Solução:** `chmod 755` nos diretórios e `chmod 644` nos arquivos dentro de `dist/` no servidor.
