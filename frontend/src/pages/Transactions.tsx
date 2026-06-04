@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card'
 import { useToast } from '../components/ui/Toast'
 import { TransactionCardSkeleton } from '../components/ui/Skeleton'
 import { Plus, ChevronLeft, ChevronRight, Download, Search, Filter, Square, CheckSquare } from 'lucide-react'
+import { PREDEFINED_TAGS, parseTags } from '../lib/tags'
 import { formatMonthYear } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
@@ -30,6 +31,7 @@ export function Transactions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterPaid, setFilterPaid] = useState<'all' | 'paid' | 'unpaid'>('all')
+  const [filterTag, setFilterTag] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [stores, setStores] = useState<string[]>([])
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
@@ -111,8 +113,11 @@ export function Transactions() {
     } else if (filterPaid === 'unpaid') {
       list = list.filter(tx => !tx.paid)
     }
+    if (filterTag) {
+      list = list.filter(tx => parseTags(tx.tags).includes(filterTag))
+    }
     return list
-  }, [transactions, monthStr, selectedDay, searchQuery, filterCategory, filterPaid, activeGroup])
+  }, [transactions, monthStr, selectedDay, searchQuery, filterCategory, filterPaid, filterTag, activeGroup])
 
   const openNew = () => { setEditing(null); setModalOpen(true) }
   const openEdit = (tx: Transaction) => { setEditing(tx); setModalOpen(true) }
@@ -332,9 +337,19 @@ export function Transactions() {
               <option value="unpaid">Pendentes</option>
               <option value="paid">Pagas</option>
             </select>
-            {(filterCategory || filterPaid !== 'all' || searchQuery) && (
+            <select
+              value={filterTag}
+              onChange={e => setFilterTag(e.target.value)}
+              className="h-8 px-3 rounded-lg bg-surface-900 border border-surface-700 text-surface-200 text-xs focus:outline-none focus:border-neon-cyan/50"
+            >
+              <option value="">Todas tags</option>
+              {PREDEFINED_TAGS.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            {(filterCategory || filterPaid !== 'all' || filterTag || searchQuery) && (
               <button
-                onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterPaid('all') }}
+                onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterPaid('all'); setFilterTag('') }}
                 className="h-8 px-3 rounded-lg bg-surface-800 text-surface-400 text-xs hover:text-surface-200 transition-colors"
               >
                 Limpar filtros

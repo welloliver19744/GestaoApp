@@ -7,6 +7,7 @@ import type { Transaction } from '../../api/types'
 import { useCategories } from '../../hooks/useCategories'
 import { ShareModal } from './ShareModal'
 import { CheckCircle2, Circle, Tag, Store, Calendar, Pencil, Trash2, ImageIcon, Share2, CheckSquare, Square } from 'lucide-react'
+import { getTagDef, parseTags } from '../../lib/tags'
 
 interface TransactionCardProps {
   transaction: Transaction
@@ -65,6 +66,14 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
             <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
             {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
             <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(tx.due_date)}</span>
+            {parseTags(tx.tags).length > 0 && (
+              <span className="flex items-center gap-1 flex-wrap">
+                {parseTags(tx.tags).map(t => {
+                  const def = getTagDef(t)
+                  return <span key={t} className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${def.color} ${def.bg}`}>{def.label}</span>
+                })}
+              </span>
+            )}
             {isShared && (
               <span className="flex items-center gap-1 text-neon-cyan">
                 <Share2 size={12} />Compartilhado

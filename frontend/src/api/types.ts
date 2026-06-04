@@ -28,6 +28,7 @@ export interface Transaction {
   original_amount: number | null
   shared_with: string[]
   group: string
+  tags: string[]
 }
 
 export interface Group {
@@ -61,6 +62,7 @@ export interface TransactionCreate {
   created_by?: string
   shared_with?: string[]
   group?: string
+  tags?: string[]
 }
 
 export interface GroupCreate {

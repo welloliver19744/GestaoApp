@@ -84,6 +84,12 @@ Se tiver uma chave de API configurada, clique em "Scan" ao lado do campo descri�
 #### Escaneamento de Código de Barras
 Clique em **"Código"** ao lado do campo descrição para escanear um código de barras com a câmera. O app busca o nome do produto, marca e preço na Open Food Facts (gratuito, sem chave). Funciona no Chrome/Edge Android e desktop. Não funciona no iPhone Safari.
 
+#### Tags / Labels
+Você pode marcar transações com tags como "Essencial", "Moradia", "Lazer" etc.:
+- **No formulário:** Um seletor de tags aparece entre a descrição e a categoria — clique nas tags para ativar/desativar.
+- **No card:** As tags aparecem como badges coloridos ao lado da categoria na listagem.
+- **Filtrar:** Na página de Transações, abra os filtros e selecione uma tag para filtrar.
+
 #### Auto-categorização
 Ao sair do campo descrição (onBlur), se a IA estiver configurada, a categoria será sugerida automaticamente baseada na descrição.
 

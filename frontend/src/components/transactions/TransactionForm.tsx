@@ -8,7 +8,8 @@ import { compressImage } from '../../lib/utils'
 import { scanBarcode, lookupBarcode } from '../../lib/barcode'
 import { pb, transactions as transactionsApi } from '../../api/client'
 import type { Transaction, PaymentType } from '../../api/types'
-import { Camera, Loader2, Wand2, X, Scan } from 'lucide-react'
+import { Camera, Loader2, Wand2, X, Scan, Tags } from 'lucide-react'
+import { PREDEFINED_TAGS, parseTags } from '../../lib/tags'
 
 interface TransactionFormProps {
   open: boolean
@@ -30,6 +31,7 @@ export interface FormData {
   currency: string
   receiptFile?: File | null
   group?: string
+  tags: string[]
 }
 
 function emptyForm(): FormData {
@@ -46,6 +48,7 @@ function emptyForm(): FormData {
     currency: 'BRL',
     receiptFile: null,
     group: '',
+    tags: [],
   }
 }
 
@@ -67,6 +70,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       notes: initial.notes || '',
       currency: initial.currency || 'BRL',
       group: initial.group || '',
+      tags: parseTags(initial.tags),
       receiptFile: null,
     }
   })
@@ -269,6 +273,34 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
             required
             autoFocus
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-surface-300 mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Tags size={14} className="text-surface-400" />
+              Tags
+            </div>
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {PREDEFINED_TAGS.map(t => {
+              const selected = form.tags.includes(t.value)
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => set('tags', selected ? form.tags.filter(v => v !== t.value) : [...form.tags, t.value])}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border ${
+                    selected
+                      ? `${t.bg} ${t.color} border-current`
+                      : 'text-surface-500 border-surface-700 hover:border-surface-500'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
