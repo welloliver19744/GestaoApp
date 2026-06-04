@@ -2,12 +2,29 @@ routerAdd('POST', '/api/push/check', (c) => {
   try {
     var subs = c.app.findRecordsByFilter('push_subscriptions', 'enabled=true', '', 0, 200)
     var subscriptions = []
+    var userIds = {}
     for (var i = 0; i < subs.length; i++) {
       var subData = subs[i].get('subscription')
       subscriptions.push({
         id: subs[i].id,
         subscription: typeof subData === 'string' ? JSON.parse(subData) : subData,
       })
+      var uid = subs[i].getString('user')
+      if (uid) userIds[uid] = true
+    }
+
+    var users = []
+    for (var uid in userIds) {
+      try {
+        var u = c.app.findRecordById('users', uid)
+        if (u) {
+          users.push({
+            id: u.id,
+            email: u.getString('email'),
+            name: u.getString('name'),
+          })
+        }
+      } catch (_) {}
     }
 
     var d = new Date()
@@ -29,9 +46,9 @@ routerAdd('POST', '/api/push/check', (c) => {
       '', 0, 1
     ).length
 
-    return c.json(200, { subscriptions: subscriptions, dueTomorrow: dueTomorrow, overdue: overdue })
+    return c.json(200, { subscriptions: subscriptions, users: users, dueTomorrow: dueTomorrow, overdue: overdue })
   } catch (e) {
-    return c.json(200, { subscriptions: [], dueTomorrow: 0, overdue: 0, error: String(e) })
+    return c.json(200, { subscriptions: [], users: [], dueTomorrow: 0, overdue: 0, error: String(e) })
   }
 })
 

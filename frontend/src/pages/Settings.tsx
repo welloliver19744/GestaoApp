@@ -6,6 +6,7 @@ import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Su
 import { getAIConfig, saveAIConfig, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useTheme } from '../hooks/useTheme'
+import { Mail } from 'lucide-react'
 
 const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
@@ -227,6 +228,26 @@ export function Settings() {
               Notificações push não são suportadas neste navegador.
             </p>
           )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <Mail size={18} className="text-neon-cyan" />
+          <h2 className="text-sm font-semibold text-surface-200">Notificações por E-mail</h2>
+        </div>
+        <div className="space-y-3">
+          <p className="text-sm text-surface-400">
+            Lembretes de contas a vencer também podem ser enviados por e-mail.
+          </p>
+          <p className="text-xs text-surface-500">
+            Para ativar, configure um servidor SMTP no arquivo{' '}
+            <code className="text-neon-cyan">scripts/email-config.json</code> do servidor.
+            Use o modelo em <code className="text-neon-cyan">email-config.example.json</code>.
+          </p>
+          <p className="text-xs text-surface-500">
+            Os e-mails são enviados automaticamente todos os dias às 08:05 para o e-mail cadastrado na sua conta.
+          </p>
         </div>
       </Card>
 
