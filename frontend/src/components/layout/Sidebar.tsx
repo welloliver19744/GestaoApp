@@ -14,6 +14,13 @@ const links = [
   { to: '/settings', icon: Settings, label: 'Configurações' },
 ]
 
+const mobileLinks = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
+  { to: '/recurring', icon: Repeat, label: 'Recorrências' },
+  { to: '/settings', icon: Settings, label: 'Configurar' },
+]
+
 export function Sidebar() {
   return (
     <aside className="hidden md:flex w-64 h-screen bg-surface-950 border-r border-surface-800 flex-col shrink-0">
@@ -74,23 +81,23 @@ export function Sidebar() {
 
 export function MobileBottomNav() {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-950 border-t border-surface-800 flex items-center justify-around py-1 safe-area-pb">
-      {links.map(({ to, icon: Icon, label }) => (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-950 border-t border-surface-800 flex items-center justify-around px-1 safe-area-pb">
+      {mobileLinks.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/'}
           className={({ isActive }) =>
             cn(
-              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 min-w-0',
+              'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all duration-200 min-w-0 flex-1 max-w-[80px]',
               isActive
                 ? 'text-neon-cyan'
                 : 'text-surface-400 hover:text-surface-200'
             )
           }
         >
-          <Icon size={20} />
-          <span className="text-[10px] leading-none">{label}</span>
+          <Icon size={18} />
+          <span className="truncate w-full text-center">{label}</span>
         </NavLink>
       ))}
     </nav>

@@ -123,6 +123,10 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Bulk edit (checkboxes, selecionar todos, pagar/pendente/categoria/excluir)
 - Metas investimento (goal_type, appreciation %)
 - Relatórios anuais (/reports, bar/line charts, top categorias, export)
+- Auto-fetch modelos AI ao trocar provedor, salvar chave e carregar página
+- Notificações Discord (webhook, Settings UI, test button, cron 08:08)
+- Scanner código de barras (BarcodeDetector API + Open Food Facts)
+- Bottom nav mobile reduzido (4 itens: Dashboard, Transações, Recorrências, Configurar)
 
 ## Configurações Importantes
 - **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage. Provedores: OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom. Botão "Buscar modelos" popula o select com modelos da API.

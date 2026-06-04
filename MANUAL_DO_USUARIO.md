@@ -81,6 +81,9 @@ Todas as transações do mês selecionado, ordenadas por data.
 #### Escaneamento com IA
 Se tiver uma chave de API configurada, clique em "Scan" ao lado do campo descrição para fotografar uma conta. A IA lê os dados automaticamente.
 
+#### Escaneamento de Código de Barras
+Clique em **"Código"** ao lado do campo descrição para escanear um código de barras com a câmera. O app busca o nome do produto, marca e preço na Open Food Facts (gratuito, sem chave). Funciona no Chrome/Edge Android e desktop. Não funciona no iPhone Safari.
+
 #### Auto-categorização
 Ao sair do campo descrição (onBlur), se a IA estiver configurada, a categoria será sugerida automaticamente baseada na descrição.
 
@@ -263,6 +266,14 @@ Para configurar, o administrador do servidor precisa:
 1. Copiar `scripts/email-config.example.json` para `scripts/email-config.json`.
 2. Preencher com dados SMTP (servidor, porta, usuário, senha).
 3. Os e-mails serão enviados automaticamente às 08:05 da manhã.
+
+#### Notificações Discord
+1. No Discord, vá em Configurações do Canal → Integrações → Webhooks → Criar Webhook.
+2. Copie a URL do webhook.
+3. No app, vá em Configurações → Notificações Discord e cole a URL.
+4. Clique em "Enviar teste" para confirmar.
+5. Para ativar no servidor, copie a URL para `scripts/discord-config.json` (veja `discord-config.example.json`).
+6. As notificações serão enviadas automaticamente às 08:08.
 
 ### Aparência
 Alternar entre tema escuro (padrão) e claro. A preferência fica salva no navegador.
