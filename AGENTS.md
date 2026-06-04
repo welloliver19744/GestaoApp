@@ -30,6 +30,7 @@ Browser → Nginx (3001) → /api/ → Kong (8090) → PocketBase (8091 → 8090
 # Deploy frontend (local)
 cd frontend && npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
+ssh ... 'chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/'
 
 # Backup manual
 ssh ... 'bash /home/ubuntu/gestaocasa/scripts/backup.sh'
