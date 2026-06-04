@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Card } from '../ui/Card'
 import { Modal } from '../ui/Modal'
-import { Button } from '../ui/Button'
 import { formatCurrency, formatDate } from '../../lib/utils'
 import { pb, transactions } from '../../api/client'
 import type { Transaction } from '../../api/types'

@@ -39,7 +39,11 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 - `scripts/healthcheck.sh` – verifica `/api/health` do PocketBase.
 - `.github/workflows/ci.yml` – CI/CD no GitHub Actions (checkout, npm ci, lint, build, testes, TruffleHog). 
 - Guia de aplicação (`SECURITY_SETUP_GUIDE.md`).
-### 12. Testes (pendente)
+### 12. Correção de deploy
+- **Problema:** Nginx retornava 403 Forbidden porque o diretório `dist/` estava com permissão `700` (não legível pelo nginx).
+- **Solução:** `chmod 755` nos diretórios e `chmod 644` nos arquivos dentro de `dist/` no servidor.
+- **Build:** corrigidos imports ausentes (`pb` em `Transactions.tsx`) e import não utilizado (`Button` em `TransactionCard.tsx`), rebuildado e copiado para o servidor via SCP.
+### 13. Testes (pendente)
 - Ainda não há testes automatizados; próximo passo será criar testes unitários/componente com Vitest e integrá‑los ao CI.
 
 ## Próximos passos recomendados

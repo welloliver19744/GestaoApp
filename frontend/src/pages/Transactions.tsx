@@ -12,7 +12,7 @@ import { formatMonthYear } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
 import type { Category } from '../api/types'
-import { categories as categoriesApi } from '../api/client'
+import { pb, categories as categoriesApi } from '../api/client'
 
 function formatDateBR(dateStr: string) {
   const [y, m, d] = dateStr.split('-')
