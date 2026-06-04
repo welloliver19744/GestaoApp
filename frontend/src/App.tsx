@@ -11,6 +11,8 @@ import { Recurring } from './pages/Recurring'
 import { Settings } from './pages/Settings'
 import { Goals } from './pages/Goals'
 import { ReceiptGallery } from './pages/ReceiptGallery'
+import { PwaInstallPrompt } from './components/ui/PwaInstallPrompt'
+import { Onboarding } from './components/ui/Onboarding'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -40,10 +42,11 @@ export default function App() {
             <Route path="/receipts" element={<ReceiptGallery />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-      <UpdateBanner />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <PwaInstallPrompt />
+          <Onboarding />
+          <UpdateBanner />
     </ToastProvider>
   )
 }

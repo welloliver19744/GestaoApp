@@ -73,6 +73,27 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const [stores, setStores] = useState<string[]>([])
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
   const storeRef = useRef<HTMLDivElement>(null)
+  const autoCatTimer = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {
+      const unique = [...new Set(r.map((tx: any) => tx.store).filter(Boolean))] as string[]
+      setStores(unique)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    return () => clearTimeout(autoCatTimer.current)
+  }, [])
+
+  const handleDescriptionBlur = () => {
+    if (!initial && aiConfig.apiKey && form.description.trim() && categories.length) {
+      clearTimeout(autoCatTimer.current)
+      autoCatTimer.current = setTimeout(() => {
+        if (!form.category) handleAutoCategorize()
+      }, 400)
+    }
+  }
 
   useEffect(() => {
     transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {
@@ -198,6 +219,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
           <input
             value={form.description}
             onChange={e => set('description', e.target.value)}
+            onBlur={handleDescriptionBlur}
             className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
             required
             autoFocus
