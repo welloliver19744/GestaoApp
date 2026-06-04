@@ -112,12 +112,15 @@
 - `/reports`: year selector, bar chart + line chart, top 10 categorias
 - CSV/PDF export, summary cards
 
-### 29. 11 provedores AI ✅
-- OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama + Custom
+### 29. 12 provedores AI + busca automática de modelos ✅
+- OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom
 - Endpoint e modelo auto-preenchidos ao selecionar
+- Botão "Buscar modelos" busca lista da API e exibe em `<select>`
 
-### 30. Contas familiares ❌ (pendente)
-- Orçamento compartilhado real com grupos, permissões, saldo entre usuários
+### 30. Contas familiares ✅
+- Coleção `groups`, GroupSelector, Dashboard/Transactions filtrados
+- ShareModal integrado com grupo, schema SQLite corrigido
+- Descoberta: `$app.dao()` não existe no PB v0.39; campos são JSON em `_collections.fields`
 
 ---
 
@@ -128,7 +131,7 @@
 cd frontend
 npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
-ssh ubuntu@137.131.187.156 "docker exec gestaocasa-frontend nginx -s reload"
+ssh ubuntu@137.131.187.156 "chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker exec gestaocasa-frontend nginx -s reload"
 ```
 
 ### Rodar testes

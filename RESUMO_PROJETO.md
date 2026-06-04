@@ -72,5 +72,7 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 | 27 | **Bulk edit** | Seleção múltipla com ações em massa |
 | 28 | **Metas investimento** | goal_type, appreciation %, initial_amount |
 | 29 | **Relatórios anuais** | Página /reports com gráficos e exportação |
-| 30 | **Contas familiares** | (pendente) Orçamento compartilhado real |
+| 30 | **Contas familiares** | Grupos, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema SQLite direto |
+| | **Extra** | Busca automática de modelos AI (botão "Buscar modelos" no Settings) |
+| | **Descobertas** | `$app.dao()` não existe no PB v0.39; campos são JSON em `_collections.fields`; `new Field()` rejeita `_pb_users_auth_`; `crypto.randomUUID()` não disponível em cron |
 

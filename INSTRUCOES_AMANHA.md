@@ -1,10 +1,10 @@
 # INSTRUCOES_AMANHA.md
 
-## ✅ Projeto completo – todos os 30 itens
+## ✅ Projeto completo – todos os 30 itens + extras
 
 ### Completos
 1. Backup automático (cron, 14d retention, `scripts/backup.sh`)
-2. OCR + upload comprovantes (compressImage, scanBillWithAI, receit field)
+2. OCR + upload comprovantes (compressImage, scanBillWithAI, receipt field)
 3. Transações recorrentes (cron hook + UI gerenciamento)
 4. Push notifications (VAPID, SW, cron, toggle Settings)
 5. Export CSV/PDF (CSV + jsPDF com autoTable)
@@ -31,10 +31,12 @@
 26. Bulk edit (checkboxes, selecionar todos, pagar/pendente/categoria/excluir)
 27. Metas investimento (goal_type, appreciation %, initial_amount)
 28. Relatórios anuais (/reports, bar/line charts, top categorias, export)
-29. 11 provedores AI (OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama + Custom)
+29. 12 provedores AI + busca automática de modelos (OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom)
+30. Contas familiares (groups collection, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema corrigido via SQLite direto)
 
-### Pendente
-30. **Contas familiares** (orçamento compartilhado real com múltiplos usuários)
+### Extras
+- Busca automática de modelos AI (botão "Buscar modelos" + `<select>`)
+- Descobertas PB v0.39: `$app.dao()` não existe, campos são JSON em `_collections.fields`, `new Field()` rejeita `_pb_users_auth_`
 
 ## Como dar manutenção
 
@@ -43,7 +45,7 @@
 cd frontend
 npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
-ssh ubuntu@137.131.187.156 "docker exec gestaocasa-frontend nginx -s reload"
+ssh ubuntu@137.131.187.156 "chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker exec gestaocasa-frontend nginx -s reload"
 ```
 
 ### Rodar testes

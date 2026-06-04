@@ -167,8 +167,32 @@
 
 ---
 
+## 15. Contas Familiares ✅
+
+**Status:** Implementado.
+- Coleção `groups` (name, description, members, created_by)
+- `useGroups` hook com CRUD + gerenciamento de membros
+- Página `/groups` com criação/edição/exclusão
+- `GroupSelector` no Dashboard e Transactions (filtro via URL param)
+- Dashboard filtra cards/gráficos/transactions pelo grupo
+- TransactionForm com campo opcional de grupo
+- ShareModal integrado: filtra membros do grupo ativo
+- Sidebar com link "Grupos"
+- Schema SQLite corrigido via Python (workaround: `new Field()` rejeita `_pb_users_auth_`)
+
+---
+
+## 16. Busca Automática de Modelos AI ✅
+
+**Status:** Implementado.
+- Botão "Buscar modelos" no Settings ao lado do campo Modelo
+- Funciona para todos os 12 provedores (cada um com auth própria: Bearer, x-api-key, query param)
+- Ao clicar, fetch de `{endpoint}/models` e exibe `<select>` com opções
+- Botão de recarregar quando já populado
+- Mensagem de erro se API retornar falha
+
+---
+
 ## Próximo item sugerido
 
-| # | Item | Descrição |
-|---|------|-----------|
-| 30 | **Contas familiares** | Orçamento compartilhado real: grupos, permissões, saldo entre usuários, approval flow |
+Nenhum. Projeto funcionalmente completo. Apenas configuração SMTP manual pendente.

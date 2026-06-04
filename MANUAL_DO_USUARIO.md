@@ -231,9 +231,9 @@ Altere seu nome de exibição. O e-mail é o mesmo usado no login.
 ### Inteligência Artificial
 Configure para usar recursos de IA (scan de contas, auto-categorização, insights):
 
-1. **Provedor:** Escolha entre 11 provedores pré-configurados + Custom (veja tabela abaixo).
+1. **Provedor:** Escolha entre 12 provedores pré-configurados + Custom (veja tabela abaixo).
 2. **Endpoint:** Preenchido automaticamente ao selecionar o provedor. Para Custom, informe a URL base.
-3. **Modelo:** Preenchido automaticamente com o modelo padrão, mas pode ser alterado manualmente.
+3. **Modelo:** Preenchido automaticamente com o modelo padrão, mas pode ser alterado manualmente. Clique em **"Buscar modelos"** (ao lado do campo) para listar todos os modelos disponíveis da API — o campo vira um `<select>` com as opções. Funciona para todos os provedores.
 4. **API Key:** Sua chave de API (fica salva apenas no seu navegador, nunca é enviada ao servidor).
 
 **Provedores suportados:**
