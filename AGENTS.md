@@ -128,6 +128,8 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Notificações Discord (webhook, Settings UI, test button, cron 08:08)
 - Scanner código de barras (BarcodeDetector API + Open Food Facts)
 - Bottom nav mobile com scroll horizontal (todos os 8 itens, sem sobreposição)
+- Modo Viagem (Settings toggle + datas, isola despesas de viagem do Dashboard, widget exclusivo com detalhes expansíveis)
+- Comparativo de Lojas (ranking top 5 estabelecimentos no Dashboard, barras de progresso, ticket médio, visitas)
 
 ## Configurações Importantes
 - **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage. Provedores: OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom. Botão "Buscar modelos" popula o select com modelos da API.
@@ -135,6 +137,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Email:** Preencher `scripts/email-config.json` no servidor com SMTP
 - **Tema:** localStorage key `gestaocasa-theme`
 - **Onboarding:** localStorage key `gestaocasa-onboarding-done`
+- **Modo Viagem:** localStorage key `gestaocasa_travel_config` (JSON: active, name, startDate, endDate)
 
 ## Decisões Técnicas
 - **window.location.origin** como PB_URL runtime (Nginx proxy funciona sempre)
