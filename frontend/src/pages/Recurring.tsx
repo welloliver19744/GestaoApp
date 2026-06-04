@@ -99,8 +99,12 @@ export function Recurring() {
     setSaving(true)
     try {
       const now = new Date()
-      const nextDue = new Date(now.getFullYear(), now.getMonth(), form.day_of_month)
-      if (nextDue <= now) nextDue.setMonth(nextDue.getMonth() + 1)
+      let nextDue = editing?.next_due
+      if (!editing || form.day_of_month !== editing.day_of_month || form.frequency !== editing.frequency || form.month !== (editing.month || 1)) {
+        const d = new Date(now.getFullYear(), now.getMonth(), form.day_of_month)
+        if (d <= now) d.setMonth(d.getMonth() + 1)
+        nextDue = d.toISOString().slice(0, 10)
+      }
 
       const payload: RecurringCreate = {
         description: form.description,
@@ -114,8 +118,8 @@ export function Recurring() {
         frequency: form.frequency,
         day_of_month: form.day_of_month,
         month: form.frequency === 'yearly' ? form.month : undefined,
-        active: true,
-        next_due: nextDue.toISOString().slice(0, 10),
+        active: editing ? editing.active : true,
+        next_due: nextDue!,
         notes: form.notes || undefined,
         owner: pb.authStore.record?.id,
       }
@@ -344,6 +348,14 @@ export function Recurring() {
               </div>
             )}
           </div>
+          {editing && (
+            <div className="text-xs text-surface-400">
+              Próximo vencimento atual: {formatDate(editing.next_due)}
+              {(form.day_of_month !== editing.day_of_month || form.frequency !== editing.frequency || form.month !== (editing.month || 1)) && (
+                <span className="text-neon-amber"> · será recalculado ao salvar</span>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-2">Tipo de Pagamento</label>
