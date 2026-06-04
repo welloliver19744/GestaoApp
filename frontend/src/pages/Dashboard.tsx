@@ -413,6 +413,72 @@ export function Dashboard() {
         </Card>
       </div>
 
+      {/* Month-over-month comparison */}
+      {monthComparison && (
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 size={16} className="text-neon-cyan" />
+            <h2 className="text-sm font-semibold text-surface-300 uppercase tracking-wider">Comparativo Mensal</h2>
+          </div>
+          {(() => {
+            const prevStr = new Date(today.getFullYear(), today.getMonth() + monthOffset - 1, 1).toISOString().slice(0, 7)
+            const curStr = currentMonth.toISOString().slice(0, 7)
+            const curByCat = new Map<string, number>()
+            const prevByCat = new Map<string, number>()
+            for (const tx of transactions) {
+              if (tx.due_date?.startsWith(curStr)) {
+                curByCat.set(tx.category, (curByCat.get(tx.category) || 0) + tx.installment_value)
+              } else if (tx.due_date?.startsWith(prevStr)) {
+                prevByCat.set(tx.category, (prevByCat.get(tx.category) || 0) + tx.installment_value)
+              }
+            }
+            const allCats = [...new Set([...curByCat.keys(), ...prevByCat.keys()])].sort()
+            return (
+              <div className="overflow-x-auto -mx-5">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-surface-800">
+                      <th className="text-left px-5 py-2 text-surface-500 font-medium">Categoria</th>
+                      <th className="text-right px-5 py-2 text-surface-500 font-medium">Mês Atual</th>
+                      <th className="text-right px-5 py-2 text-surface-500 font-medium">Mês Anterior</th>
+                      <th className="text-right px-5 py-2 text-surface-500 font-medium">Diferença</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allCats.map(cat => {
+                      const cur = curByCat.get(cat) || 0
+                      const prev = prevByCat.get(cat) || 0
+                      const diff = cur - prev
+                      const pct = prev > 0 ? ((cur - prev) / prev) * 100 : cur > 0 ? 100 : 0
+                      return (
+                        <tr key={cat} className="border-b border-surface-800/50">
+                          <td className="px-5 py-2.5 text-surface-200">{getLabel(cat)}</td>
+                          <td className="px-5 py-2.5 text-right text-surface-100">{formatCurrency(cur)}</td>
+                          <td className="px-5 py-2.5 text-right text-surface-400">{formatCurrency(prev)}</td>
+                          <td className={`px-5 py-2.5 text-right font-medium ${diff > 0 ? 'text-neon-red' : diff < 0 ? 'text-neon-green' : 'text-surface-500'}`}>
+                            {diff !== 0 ? `${diff > 0 ? '+' : ''}${pct.toFixed(0)}%` : '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-surface-700">
+                      <td className="px-5 py-2.5 text-surface-200 font-medium">Total</td>
+                      <td className="px-5 py-2.5 text-right text-surface-100 font-medium">{formatCurrency(curByCat.values().reduce((a, b) => a + b, 0))}</td>
+                      <td className="px-5 py-2.5 text-right text-surface-400 font-medium">{formatCurrency(prevByCat.values().reduce((a, b) => a + b, 0))}</td>
+                      <td className={`px-5 py-2.5 text-right font-medium ${monthComparison.diff > 0 ? 'text-neon-red' : monthComparison.diff < 0 ? 'text-neon-green' : 'text-surface-500'}`}>
+                        {monthComparison.pct !== 0 ? `${monthComparison.pct > 0 ? '+' : ''}${monthComparison.pct.toFixed(0)}%` : '—'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )
+          })()}
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
           <h2 className="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Próximos Vencimentos</h2>

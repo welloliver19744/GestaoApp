@@ -6,16 +6,18 @@ import { pb, transactions } from '../../api/client'
 import type { Transaction } from '../../api/types'
 import { useCategories } from '../../hooks/useCategories'
 import { ShareModal } from './ShareModal'
-import { CheckCircle2, Circle, Tag, Store, Calendar, Pencil, Trash2, ImageIcon, Share2 } from 'lucide-react'
+import { CheckCircle2, Circle, Tag, Store, Calendar, Pencil, Trash2, ImageIcon, Share2, CheckSquare, Square } from 'lucide-react'
 
 interface TransactionCardProps {
   transaction: Transaction
   onTogglePaid: (tx: Transaction) => void
   onEdit?: (tx: Transaction) => void
   onDelete?: (tx: Transaction) => void
+  selected?: boolean
+  onSelect?: (id: string) => void
 }
 
-export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelete }: TransactionCardProps) {
+export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelete, selected, onSelect }: TransactionCardProps) {
   const { getLabel } = useCategories()
   const isInstallment = tx.payment_type === 'installment'
   const [showReceipt, setShowReceipt] = useState(false)
@@ -35,6 +37,11 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
   return (
     <>
       <Card className="flex items-center gap-4 group">
+        {onSelect && (
+          <button onClick={() => onSelect(tx.id)} className="shrink-0 text-surface-500 hover:text-surface-200 transition-colors">
+            {selected ? <CheckSquare size={20} className="text-neon-cyan" /> : <Square size={20} />}
+          </button>
+        )}
         <button onClick={() => onTogglePaid(tx)} className="shrink-0">
           {tx.paid
             ? <CheckCircle2 size={22} className="text-neon-green" />

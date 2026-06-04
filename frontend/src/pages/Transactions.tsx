@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useToast } from '../components/ui/Toast'
 import { TransactionCardSkeleton } from '../components/ui/Skeleton'
-import { Plus, ChevronLeft, ChevronRight, X, Download, Search, Filter } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, X, Download, Search, Filter, Square, CheckSquare } from 'lucide-react'
 import { formatMonthYear } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
@@ -36,6 +36,8 @@ export function Transactions() {
   const [stores, setStores] = useState<string[]>([])
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkCategory, setBulkCategory] = useState('')
 
   useEffect(() => {
     categoriesApi.getFullList().then(setCategories).catch((e) => { console.error('Erro ao carregar categorias', e); toast('Erro ao carregar categorias', 'error') })
@@ -199,6 +201,57 @@ export function Transactions() {
     if (stores.length > 0) setShowStoreSuggestions(true)
   }
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(tx => tx.id)))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`Excluir ${selected.size} transação(ões)?`)) return
+    try {
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').delete(tx.id)))
+      toast(`${selected.size} transação(ões) excluída(s)`, 'success')
+      setSelected(new Set())
+    } catch {
+      toast('Erro ao excluir', 'error')
+    }
+  }
+
+  const handleBulkTogglePaid = async (paid: boolean) => {
+    if (selected.size === 0) return
+    try {
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').update(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
+      toast(`${selected.size} transação(ões) ${paid ? 'pagas' : 'pendentes'}`, 'success')
+      setSelected(new Set())
+    } catch {
+      toast('Erro ao atualizar', 'error')
+    }
+  }
+
+  const handleBulkCategory = async () => {
+    if (!bulkCategory || selected.size === 0) return
+    try {
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').update(tx.id, { category: bulkCategory })))
+      toast(`Categoria alterada em ${selected.size} transação(ões)`, 'success')
+      setSelected(new Set())
+      setBulkCategory('')
+    } catch {
+      toast('Erro ao atualizar', 'error')
+    }
+  }
+
   const handleStoreSelect = (store: string) => {
     setSearchQuery(store)
     setShowStoreSuggestions(false)
@@ -332,15 +385,56 @@ export function Transactions() {
         ) : filtered.length === 0 ? (
           <Card><p className="text-surface-400 text-sm text-center py-4">Nenhuma transação encontrada</p></Card>
         ) : (
-          filtered.map(tx => (
-            <TransactionCard
-              key={tx.id}
-              transaction={tx}
-              onTogglePaid={handleTogglePaid}
-              onEdit={openEdit}
-              onDelete={handleDelete}
-            />
-          ))
+          <>
+            {/* Selection toolbar */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors"
+              >
+                {selected.size === filtered.length ? <CheckSquare size={14} className="text-neon-cyan" /> : <Square size={14} />}
+                {selected.size === filtered.length ? 'Desmarcar todos' : `Selecionar todos (${filtered.length})`}
+              </button>
+              {selected.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-surface-400">{selected.size} selecionado(s)</span>
+                  <button onClick={() => handleBulkTogglePaid(true)} className="h-7 px-2.5 rounded-lg bg-neon-green/10 text-neon-green text-xs hover:bg-neon-green/20 transition-colors">
+                    Pagar
+                  </button>
+                  <button onClick={() => handleBulkTogglePaid(false)} className="h-7 px-2.5 rounded-lg bg-surface-800 text-surface-300 text-xs hover:bg-surface-700 transition-colors">
+                    Pendente
+                  </button>
+                  <select
+                    value={bulkCategory}
+                    onChange={e => setBulkCategory(e.target.value)}
+                    className="h-7 px-2 rounded-lg bg-surface-800 border border-surface-700 text-surface-200 text-xs focus:outline-none focus:border-neon-cyan/50"
+                  >
+                    <option value="">Categoria</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  {bulkCategory && (
+                    <button onClick={handleBulkCategory} className="h-7 px-2.5 rounded-lg bg-neon-cyan/10 text-neon-cyan text-xs hover:bg-neon-cyan/20 transition-colors">
+                      Aplicar
+                    </button>
+                  )}
+                  <button onClick={handleBulkDelete} className="h-7 px-2.5 rounded-lg bg-neon-red/10 text-neon-red text-xs hover:bg-neon-red/20 transition-colors">
+                    Excluir
+                  </button>
+                </div>
+              )}
+            </div>
+            {filtered.map(tx => (
+              <TransactionCard
+                key={tx.id}
+                transaction={tx}
+                onTogglePaid={handleTogglePaid}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+                selected={selected.has(tx.id)}
+                onSelect={toggleSelect}
+              />
+            ))}
+          </>
         )}
       </div>
 
