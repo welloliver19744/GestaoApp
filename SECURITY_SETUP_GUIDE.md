@@ -1,156 +1,164 @@
-# Guia rápido – Configuração de Segurança e Infra (Item 11)
+# Guia rápido – Configuração de Segurança e Infra
 
-Este documento descreve, passo‑a‑passo, como aplicar as alterações de segurança que já foram preparadas nos scripts do repositório.  Tudo que você precisa está dentro da pasta `scripts/` do projeto.
+Este documento descreve, passo‑a‑passo, como aplicar as alterações de segurança que já foram preparadas nos scripts do repositório. Tudo que você precisa está dentro da pasta `scripts/` do projeto.
 
 ---
 
 ## 1️⃣ Acesso ao servidor
 ```bash
-# Substitua pelos seus dados
-ssh <USUARIO>@<ENDERECO_DO_SERVIDOR>
-# Caso sua conexão SSH use outra porta, adicione -p <PORTA>
+ssh ubuntu@137.131.187.156 -i C:\Users\welld\Downloads\ssh-key-2026-05-26\ \(1\).key
 ```
 
 ---
 
 ## 2️⃣ Transferir os arquivos do seu PC para o servidor
-> **Windows → Linux** (usar `scp` ou `pscp`).
 ```bash
-# No PowerShell (caminho local da sua máquina Windows)
-scp -r C:\Users\welld\Desktop\GestaoCasa\scripts\ <USUARIO>@<ENDERECO_DO_SERVIDOR>:/home/<USUARIO>/gestaocasa/
+# No PowerShell
+scp -r C:\Users\welld\Desktop\GestaoCasa\scripts\ ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/
 ```
-> **Resultado esperado** (no servidor):
+**Resultado esperado** (no servidor):
 ```
-/home/<USUARIO>/gestaocasa/
+/home/ubuntu/gestaocasa/
 ├─ fail2ban.conf
 ├─ setup_ufw.sh
-└─ healthcheck.sh
+├─ healthcheck.sh
+├─ backup.sh
+├─ send-push.js
+├─ send-email-notifications.js
+├─ email-config.json
+├─ email-config.example.json
+└─ package.json
 ```
+
 ---
 
 ## 3️⃣ Configurar **fail2ban**
 ```bash
-# Copiar o arquivo para o diretório de configuração do fail2ban
-sudo cp /home/<USUARIO>/gestaocasa/fail2ban.conf /etc/fail2ban/jail.local
-
-# (Se o fail2ban ainda não estiver instalado)
-sudo apt-get update && sudo apt-get install -y fail2ban
-
-# Reiniciar o serviço para aplicar as regras
+sudo cp /home/ubuntu/gestaocasa/fail2ban.conf /etc/fail2ban/jail.local
 sudo systemctl restart fail2ban
-
-# Verificar se está ativo
 sudo systemctl status fail2ban
 ```
-> O `jail.local` já contém: banimento de 1 h após 5 tentativas falhas em `sshd`.
+
+O `jail.local` contém:
+- **sshd**: banimento de 1 h após 5 tentativas falhas
+- **nginx-limit-req**: banimento de 1 h após 3 excessos de rate limit em 10 min
+
 ---
 
 ## 4️⃣ Configurar o **firewall UFW**
 ```bash
-# Tornar o script executável
-chmod +x /home/<USUARIO>/gestaocasa/setup_ufw.sh
-
-# Executar como root
-sudo /home/<USUARIO>/gestaocasa/setup_ufw.sh
+chmod +x /home/ubuntu/gestaocasa/setup_ufw.sh
+sudo /home/ubuntu/gestaocasa/setup_ufw.sh
 ```
-> O script realiza:
-> - `ufw allow OpenSSH` (porta 22 ou a que usa seu SSH)
-> - `ufw allow 80/tcp`  & `ufw allow 443/tcp` (HTTP/HTTPS)
-> - `ufw allow 8091/tcp` (porta pública que seu Kong/Nginx encaminha para PocketBase)
-> - `ufw enable`
+
+O script realiza:
+- `ufw allow OpenSSH` (porta 22)
+- `ufw allow 80/tcp` & `ufw allow 443/tcp`
+- `ufw allow 3001/tcp` (Nginx frontend)
+- `ufw allow 8091/tcp` (PocketBase admin)
+- `ufw enable`
 
 ### Verificar regras
 ```bash
 sudo ufw status verbose
 ```
+
 ---
 
 ## 5️⃣ Health‑check da API PocketBase
 ### 5.1 Tornar o script executável
 ```bash
-chmod +x /home/<USUARIO>/gestaocasa/healthcheck.sh
+chmod +x /home/ubuntu/gestaocasa/healthcheck.sh
 ```
 ### 5.2 Teste manual
 ```bash
-/home/<USUARIO>/gestaocasa/healthcheck.sh
+/home/ubuntu/gestaocasa/healthcheck.sh
 # Saída esperada: "Health check passed"
 ```
-### 5.3 Agendar a verificação automática
-#### Opção A – **systemd timer** (recomendado)
+### 5.3 Agendar via systemd timer
 ```bash
-# Serviço
 sudo tee /etc/systemd/system/gestaocasa-health.service > /dev/null <<'EOF'
 [Unit]
 Description=Health‑check da API GestaoCasa
-
 [Service]
 Type=oneshot
-ExecStart=/home/<USUARIO>/gestaocasa/healthcheck.sh
+ExecStart=/home/ubuntu/gestaocasa/healthcheck.sh
 EOF
 
-# Timer (a cada 5 minutos)
 sudo tee /etc/systemd/system/gestaocasa-health.timer > /dev/null <<'EOF'
 [Unit]
 Description=Timer para health‑check da API GestaoCasa
-
 [Timer]
 OnBootSec=30
-OnUnitActiveSec=300   # 5 minutos
+OnUnitActiveSec=300
 Persistent=true
-
 [Install]
 WantedBy=timers.target
 EOF
 
-# (Re)carregar e habilitar
 sudo systemctl daemon-reload
 sudo systemctl enable --now gestaocasa-health.timer
-
-# Verificar se está ativo
 systemctl list-timers | grep gestaocasa-health
 ```
-#### Opção B – **cron** (alternativa simples)
-```bash
-crontab -e
-# Adicione a linha abaixo (executa a cada 5 minutos)
-*/5 * * * * /home/<USUARIO>/gestaocasa/healthcheck.sh >> /var/log/gestaocasa-health.log 2>&1
+
+---
+
+## 6️⃣ Rate limiting (Nginx)
+Já aplicado no `nginx.conf` do container gestaocasa-frontend:
+```nginx
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=login:10m rate=3r/m;
+
+location /api/ {
+    limit_req zone=api burst=20 nodelay;
+    proxy_pass http://supabase-kong:8090/;
+}
+
+location /api/collections/users/auth-with-password {
+    limit_req zone=login burst=2 nodelay;
+    proxy_pass http://supabase-kong:8090/api/collections/users/auth-with-password;
+}
 ```
+
 ---
 
-## 6️⃣ CI/CD (GitHub Actions) já está pronto
-- Arquivo: `.github/workflows/ci.yml`
-- Dispara em *push* ou *pull‑request* na branch `main`.
-- Etapas:
-  1. Checkout do código
-  2. `npm ci` (frontend)
-  3. Lint (`npm run lint` – opcional)
-  4. Build (`npm run build`)
-  5. Testes (`npm test` – se houver)
-  6. Scaneamento de segredos com **TruffleHog**
-
-### Como ativar
-1. Crie um repositório no GitHub e **push** o seu código:
+## 7️⃣ Notificações por E-mail
+### Configurar SMTP
 ```bash
-# Caso ainda não tenha remoto configurado
-git remote add origin git@github.com:<SEU_USUARIO>/GestaoCasa.git
-git push -u origin main
+cp /home/ubuntu/gestaocasa/scripts/email-config.example.json /home/ubuntu/gestaocasa/scripts/email-config.json
+nano /home/ubuntu/gestaocasa/scripts/email-config.json
+# Preencha host, port, user, pass
 ```
-2. Acesse a aba **Actions** do repositório → você verá o workflow rodando.
+
+### Instalar dependência (nodemailer)
+```bash
+cd /home/ubuntu/gestaocasa/scripts && npm install
+```
+
+### Agendar cron (já ativo)
+```
+5 8 * * * node /home/ubuntu/gestaocasa/scripts/send-email-notifications.js >> /home/ubuntu/gestaocasa/scripts/push.log 2>&1
+```
 
 ---
 
-## 7️⃣ Checklist final (confirmação)
-- [ ] `fail2ban.conf` copiado para `/etc/fail2ban/jail.local` e serviço reiniciado.
-- [ ] `setup_ufw.sh` executado, firewall ativo e regras listadas.
-- [ ] `healthcheck.sh` testado manualmente e agendado (systemd ou cron).
-- [ ] Workflow CI presente e primeiro *run* concluído com sucesso.
+## 8️⃣ CI/CD (GitHub Actions)
+Arquivo: `.github/workflows/ci.yml`
+- Dispara em push na branch `master`
+- Etapas: checkout, npm ci, lint, build, tests (24), TruffleHog
 
 ---
 
-## 8️⃣ Próximos passos
-- **Item 12 – Testes**: criar testes unitários/componente (Vitest) e garantir que o pipeline CI falhe caso quebrem.
-- **Refinamento de segurança** (TLS, cabeçalhos Hardening, etc.) se necessário.
+## 9️⃣ Checklist final
+- [ ] fail2ban ativo com jails sshd + nginx-limit-req
+- [ ] UFW ativo com portas 22, 80, 443, 3001, 8091
+- [ ] Healthcheck agendado (systemd timer 5min)
+- [ ] Rate limiting Nginx configurado (10r/s API, 3r/m login)
+- [ ] Backup automático cron diário 03:00
+- [ ] Push notifications cron diário 08:00
+- [ ] Email notifications cron diário 08:05 (se SMTP configurado)
+- [ ] CI/CD pipeline no GitHub Actions
 
 ---
 
-*Este guia foi gerado automaticamente a partir dos scripts já presentes no repositório.  Qualquer dúvida ou erro ao executar algum passo, copie‑a mensagem de erro aqui que eu ajudo a corrigir.*
+*Qualquer dúvida ou erro ao executar algum passo, copie a mensagem de erro aqui que eu ajudo a corrigir.*

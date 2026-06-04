@@ -1,176 +1,174 @@
 # Plano de Melhorias - Gestão Casa
 
-> Apenas sugestões. Nada implementado ainda.
+> ✅ = Implementado. Itens abaixo refletem o estado atual do projeto.
 
 ---
 
-## 1. Backup Automático do pb_data
+## 1. Backup Automático do pb_data ✅
 
-**Problema:** Banco SQLite fica dentro do container Docker. Se o container quebrar ou o VPS for comprometido, os dados podem ser perdidos.
-
-**Sugestões:**
-- Script no servidor via cron que executa `docker cp` do `pb_data` pra um diretório fora do container
-- Backup diário compactado (`.tar.gz`) com data no nome
-- Enviar cópia para nuvem (Google Drive, Dropbox, ou S3-compatible)
-- Reter últimos 7 dias (rotacionar backups antigos)
-- Opção no Settings do app: "Último backup: 03/06/2026 → Baixar / Exportar"
+**Status:** Implementado.
+- Script `scripts/backup.sh` no servidor via cron (diário 03:00)
+- Backup compactado `.tar.gz` com data no nome
+- Retenção de 14 dias (rotação automática)
+- Opção no Settings: mostra info do servidor
 
 ---
 
-## 2. Upload de Comprovante (imagem anexada à transação)
+## 2. Upload de Comprovante ✅
 
-**Problema:** O scan tira foto pra preencher campos, mas a imagem não é salva. Depois não tem como consultar o comprovante original.
-
-**Sugestões:**
-- Novo campo `receipt` do tipo `file` na collection `transactions` do PocketBase
-- Upload via formulário (câmera ou galeria)
-- Exibir miniatura no TransactionCard
+**Status:** Implementado.
+- Campo `receipt` do tipo `file` na collection `transactions`
+- Upload via formulário (câmera ou galeria) com compressImage
+- Exibição em miniatura no TransactionCard
 - Modal de visualização em tela cheia
-- Opção de download
+- Galeria dedicada em `/receipts` com filtro por mês
+- Escaneamento com IA (scanBillWithAI)
 
 ---
 
-## 3. Notificações Push
+## 3. Notificações Push ✅
 
-**Problema:** Usuário precisa abrir o app pra saber de contas próximas do vencimento.
-
-**Sugestões:**
-- Usar Push API + Service Worker (já existe no projeto)
-- Inscrever usuário nas notificações (pedir permissão)
-- Tipos de notificação:
-  - **Contas a vencer amanhã** (push diário)
-  - **Contas vencidas e não pagas** (alerta)
-  - **Lembrete de parcela** (todo mês)
-- Agendamento via PocketBase hooks (`pb_hooks`) com cron
-- Configuração no Settings: "Notificações → Ativar / Desativar"
+**Status:** Implementado.
+- Push API + Service Worker
+- Inscrição com toggle no Settings
+- Contas a vencer amanhã (push diário 08:00 via cron)
+- Contas vencidas e não pagas (alerta)
+- Agendamento via `send-push.js` (cron)
 
 ---
 
-## 4. Dashboard Avançado
+## 4. Dashboard Avançado ✅
 
-**Problema:** Dashboard atual mostra resumo simples. Dá pra evoluir bastante.
-
-**Sugestões:**
-- **Gráfico de evolução mensal** (linha: receitas vs despesas ao longo dos meses)
-- **Gráfico de pizza/rosca** por categoria no mês selecionado
-- **Comparativo com mês anterior** (% de aumento/redução)
-- **Limite de orçamento** por categoria (barra de progresso: Alimentação R$ 800 / R$ 1200)
-- **Extrato rápido**: últimas 5 transações não pagas na home
-- **Saldo projetado**: saldo atual - contas a pagar do mês
-
----
-
-## 5. Multi-moeda / Conversão
-
-**Problema:** App é só BRL. Se o usuário viaja ou faz compra em dólar/euro, não tem como registrar na moeda original.
-
-**Sugestões:**
-- Campo `currency` na transação (BRL, USD, EUR, etc.)
-- Conversão automática via API de câmbio (ex: AwesomeAPI gratuita)
-- Exibição: "R$ 150,00 ($ 26,50)" na tela de transações
-- Dashboard sempre em BRL (conversão unificada)
+**Status:** Implementado.
+- Gráfico de evolução mensal (linha: total vs pago, 6 meses)
+- Gráfico de rosca por categoria no mês
+- Comparativo com mês anterior (% de aumento/redução)
+- Limite de orçamento por categoria (barra de progresso)
+- Próximos vencimentos (lista de contas a pagar)
+- Saldo projetado e cards de resumo
+- Metas financeiras no Dashboard (top 3)
+- IA Insights com resumo inteligente
 
 ---
 
-## 6. Recorrências (assinaturas fixas)
+## 5. Multi-moeda ✅
 
-**Problema:** Netflix, Spotify, aluguel → precisa criar manualmente todo mês.
-
-**Sugestões:**
-- Nova collection `recurring_transactions`
-- Campos: descrição, categoria, valor, dia do vencimento, tipo (mensal/anual)
-- Hook no PocketBase (`pb_hooks`) que roda todo dia e gera as transações do mês automaticamente
-- Ao gerar, já vincula com o `group_id` pra editar todas de uma vez (reuso da lógica atual de parcelas)
-
----
-
-## 7. Metas Financeiras
-
-**Problema:** App só registra o que já gastou. Não ajuda a planejar.
-
-**Sugestões:**
-- Collection `goals` no PocketBase: nome, valor alvo, valor atual, prazo
-- Card no Dashboard: "Reserva de Emergência → R$ 3.000 / R$ 10.000 (30%)"
-- Barra de progresso visual
-- Sugestão automática: "Pra atingir sua meta em 12 meses, guarde R$ 583/mês"
+**Status:** Implementado.
+- Campo `currency` na transação (BRL, USD, EUR, GBP, ARS, CLP)
+- Campo `original_amount` para valor original
+- Utilitário `formatCurrency(value, currency?)`
+- Seletor de moeda no formulário
+- Exibição correta em cards, tabelas e relatórios
 
 ---
 
-## 8. Compartilhamento de Contas (despesas divididas)
+## 6. Recorrências ✅
 
-**Problema:** App é individual. Não dá pra dividir conta com outra pessoa.
-
-**Sugestões:**
-- Campo `split_with` (múltiplos usuários) + `split_value` na transação
-- Ao pagar, marca quem pagou e quanto cada um deve
-- Aba "Contas divididas" com saldo pendente entre usuários
-- Botão "Settle up" pra quitar débitos
-
----
-
-## 9. Exportação de Dados
-
-**Problema:** Não tem como exportar relatório pra contador ou planilha.
-
-**Sugestões:**
-- Exportar CSV do mês selecionado (botão no topo da lista de transações)
-- Exportar PDF com extrato mensal (sumário + lista)
-- Opção "Enviar por email" com o anexo
-- Relatório anual (Jan-Dez) em PDF
+**Status:** Implementado.
+- Collection `recurring_transactions`
+- Frequência mensal/anual, dia do mês
+- Hook pb_hooks que gera transações automaticamente
+- UI de gerenciamento (CRUD, ativar/desativar)
+- Edição preserva active/next_due
 
 ---
 
-## 10. Melhorias na UX / UI
+## 7. Metas Financeiras ✅
 
-**Sugestões:**
-- **Transição animada** entre rotas (framer-motion ou CSS transition simples)
-- **Skeleton loading** nas telas (substituir o "Carregando..." textão)
-- **Toast de feedback** ao criar/editar/excluir transação (já existe? verificar)
-- **Autocomplete de estabelecimento** baseado no histórico (ao digitar "Pão de", sugere "Pão de Açúcar")
-- **Busca textual** na lista de transações
-- **Filtro combinado**: mês + categoria + pago/não pago + busca
-- **Drag to reorder** ou pin de categorias favoritas
-- **Dark mode toggle** (já é dark, mas poderia ter tema claro opcional)
+**Status:** Implementado.
+- Collection `goals`: nome, valor alvo, valor atual, prazo
+- Card no Dashboard com barra de progresso
+- Dois tipos: goal (tradicional) e investment (com valorização)
+- Cálculo de valorização percentual para investimentos
+- Adicionar valor incremental
 
 ---
 
-## 11. Segurança e Infra
+## 8. Compartilhamento de Contas ✅
 
-**Sugestões:**
-- **Fail2ban** no servidor pra prevenir brute force SSH
-- **Firewall UFW**: liberar só 22, 3001, 8091, 443 (se direto)
-- **Docker em modo non-root** (rootless)
-- **Healthcheck** no container do frontend (nginx)
-- **Automatizar deploy** com GitHub Actions (push na main → build → scp → restart)
-- **Monitoramento**: Uptime Kuma ou similar pra pingar o domínio
-
----
-
-## 12. Testes
-
-**Problema:** Zero testes no projeto.
-
-**Sugestões:**
-- Testes unitários com Vitest (já usa Vite, integração trivial)
-- Testes nos hooks (`useTransactions`, `useAuth`)
-- Testes nos utils (`formatCurrency`, `formatDate`)
-- Testes de componente com Testing Library
-- Teste E2E com Playwright (opcional, mas recomendado pra fluxos críticos)
+**Status:** Implementado.
+- Campo `shared_with` (múltiplos usuários) + `created_by`
+- Regra de listagem: `shared_with ?= @request.auth.id`
+- Componente ShareModal com seleção de usuários
+- Badge "Compartilhado" nos cards
+- Testes automatizados (7 testes)
 
 ---
 
-## Prioridade Sugerida
+## 9. Exportação de Dados ✅
 
-| Prioridade | Item | Motivo |
-|---|---|---|
-| 🔴 Alta | Backup automático | Risco de perda de dados |
-| 🔴 Alta | Upload de comprovante | Já tem o scan, falta salvar |
-| 🟡 Média | Notificações push | Engajamento |
-| 🟡 Média | Recorrências | Reduz trabalho manual |
-| 🟡 Média | Exportação | Utilidade prática |
-| 🟢 Baixa | Gráficos no Dashboard | Visual, não funcional |
-| 🟢 Baixa | Metas financeiras | Planejamento futuro |
-| 🟢 Baixa | Compartilhamento | Escopo maior |
-| 🟢 Baixa | Multi-moeda | Nicho |
-| 🟢 Baixa | Testes | Qualidade a longo prazo |
-| 🟢 Baixa | CI/CD | Automação de deploy |
+**Status:** Implementado.
+- Exportar CSV do mês selecionado
+- Exportar PDF com extrato mensal (jsPDF + autoTable)
+- Relatório anual (/reports) com gráficos + exportação CSV/PDF
+
+---
+
+## 10. Melhorias na UX / UI ✅
+
+**Status:** Implementado.
+- Skeleton loading nas telas
+- Toast de feedback ao criar/editar/excluir
+- Autocomplete de estabelecimento baseado no histórico
+- Busca textual na lista de transações
+- Filtro combinado: mês + categoria + pago/não pago + busca
+- Dark mode + tema claro (toggle no Settings)
+- Onboarding tutorial (6 passos, primeira vez)
+- Responsividade mobile (flex-col, grids colapsam)
+- Offline banner quando sem conexão
+- PWA install prompt
+
+---
+
+## 11. Segurança e Infra ✅
+
+**Status:** Implementado.
+- Fail2ban: instalado e ativo (jail sshd + jail nginx-limit-req)
+- Firewall UFW: portas 22, 80, 443, 3001, 8091
+- Healthcheck: systemd timer a cada 5 min
+- CI/CD: GitHub Actions (checkout, npm ci, lint, build, tests, TruffleHog)
+- Rate limiting: Nginx 10r/s API, 3r/m login
+- Deploy automatizado via git push
+
+---
+
+## 12. Testes ✅
+
+**Status:** Implementado.
+- 24 testes com Vitest + Testing Library
+- `tests/utils.test.ts` (12) – formatCurrency, formatDate, cn
+- `tests/export.test.ts` (2) – exportCSV
+- `tests/toast.test.tsx` (3) – ToastProvider
+- `tests/share-modal.test.tsx` (7) – ShareModal
+- CI integrado: `npm test --if-present` no GitHub Actions
+
+---
+
+## 13. Inteligência Artificial ✅
+
+**Status:** Implementado.
+- 11 provedores pré-configurados (OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama + Custom)
+- Endpoint e modelo preenchidos automaticamente ao selecionar
+- Scan de contas com OCR (scanBillWithAI)
+- Auto-categorização na digitação (onBlur com debounce)
+- Insights financeiros no Dashboard
+- Chat IA com dados do usuário
+
+---
+
+## 14. Notificações por E-mail ✅
+
+**Status:** Implementado.
+- Script `scripts/send-email-notifications.js` (nodemailer)
+- Configuração SMTP em `scripts/email-config.json`
+- Envio automático via cron às 08:05
+- Lembretes de contas a vencer e vencidas
+- Seção informativa no Settings
+
+---
+
+## Próximo item sugerido
+
+| # | Item | Descrição |
+|---|------|-----------|
+| 30 | **Contas familiares** | Orçamento compartilhado real: grupos, permissões, saldo entre usuários, approval flow |
