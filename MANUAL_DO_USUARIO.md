@@ -4,14 +4,15 @@
 1. [Primeiros Passos](#1-primeiros-passos)
 2. [Dashboard](#2-dashboard)
 3. [Transações](#3-transações)
-4. [Metas Financeiras](#4-metas-financeiras)
-5. [Recorrências](#5-recorrências)
-6. [Comprovantes](#6-comprovantes)
-7. [Relatórios](#7-relatórios)
-8. [Configurações](#8-configurações)
-9. [Funcionalidades Avançadas](#9-funcionalidades-avançadas)
-10. [Instalação do App (PWA)](#10-instalação-do-app-pwa)
-11. [Solução de Problemas](#11-solução-de-problemas)
+4. [Contas Familiares (Grupos)](#4-contas-familiares-grupos)
+5. [Metas Financeiras](#5-metas-financeiras)
+6. [Recorrências](#6-recorrências)
+7. [Comprovantes](#7-comprovantes)
+8. [Relatórios](#8-relatórios)
+9. [Configurações](#9-configurações)
+10. [Funcionalidades Avançadas](#10-funcionalidades-avançadas)
+11. [Instalação do App (PWA)](#11-instalação-do-app-pwa)
+12. [Solução de Problemas](#12-solução-de-problemas)
 
 ---
 
@@ -93,7 +94,10 @@ Passe o mouse sobre o card e clique no ícone de lixeira. Transações parcelada
 Clique no círculo à esquerda do card para alternar entre pago e pendente.
 
 ### Compartilhar Transação
-Se você for o criador da transação, pode compartilhar com outros usuários. Clique no ícone de compartilhar e selecione os usuários.
+Se você for o criador da transação, pode compartilhar com outros usuários. Clique no ícone de compartilhar e selecione os usuários. Se estiver filtrando por um grupo, apenas os membros do grupo aparecerão.
+
+### Filtrar por Grupo Familiar
+Nas páginas de Dashboard e Transações, o seletor "Grupo:" filtra os dados de um grupo específico. Veja [Contas Familiares](#4-contas-familiares-grupos).
 
 ### Seleção em Massa (Bulk Edit)
 1. Clique em "Selecionar todos" ou marque checkboxes individuais.
@@ -110,7 +114,40 @@ Se você for o criador da transação, pode compartilhar com outros usuários. C
 
 ---
 
-## 4. Metas Financeiras
+## 4. Contas Familiares (Grupos)
+
+Compartilhe finanças com sua família ou grupo de pessoas.
+
+### Criar Grupo
+1. Acesse "Grupos" no menu lateral.
+2. Clique em "Novo Grupo".
+3. Dê um nome (ex: "Casa", "Casais", "República") e descrição opcional.
+4. Clique em "Criar".
+
+### Gerenciar Membros
+1. No card do grupo, clique em "Gerenciar Membros".
+2. Uma lista de usuários disponíveis aparece. Selecione os membros do grupo.
+3. Clique em "Salvar" para confirmar.
+
+### Filtrar por Grupo
+No Dashboard e na página de Transações, use o seletor "Grupo:" no topo para filtrar os dados de um grupo específico:
+- **Dashboard:** Mostra apenas os cards, gráficos e transações do grupo selecionado.
+- **Transações:** Mostra apenas as transações associadas ao grupo.
+- **Criação:** Nova transação é automaticamente associada ao grupo ativo.
+
+### Compartilhar com Grupo
+1. Na transação, clique no ícone de compartilhar.
+2. Se filtrando por grupo, a lista mostra apenas os membros do grupo ativo.
+3. Se não houver grupo ativo, mostra todos os usuários.
+
+### Regras
+- Apenas o criador pode editar/excluir o grupo.
+- Todos os membros veem as transações associadas.
+- Membros podem ser adicionados/removidos a qualquer momento.
+
+---
+
+## 5. Metas Financeiras
 
 ### Criar Meta
 1. Clique em "Nova Meta".
@@ -133,7 +170,7 @@ Use os ícones de editar e excluir no canto superior direito do card.
 
 ---
 
-## 5. Recorrências
+## 6. Recorrências
 
 ### O que são
 Contas que se repetem mensalmente ou anualmente (aluguel, assinaturas, IPVA etc.).
@@ -158,7 +195,7 @@ Clique no ícone de lixeira.
 
 ---
 
-## 6. Comprovantes
+## 7. Comprovantes
 
 ### Anexar Comprovante
 Na criação/edição de uma transação, use o botão "Scan" ou o campo de upload de arquivo (ícone de câmera) para anexar uma foto do comprovante.
@@ -172,7 +209,7 @@ Acesse pelo menu "Comprovantes" para ver todos os recibos em grid:
 
 ---
 
-## 7. Relatórios
+## 8. Relatórios
 
 ### Relatório Anual
 Acesse pelo menu "Relatórios" para ver a análise completa do ano:
@@ -186,7 +223,7 @@ Navegue entre os anos com os botões `<` e `>`.
 
 ---
 
-## 8. Configurações
+## 9. Configurações
 
 ### Perfil
 Altere seu nome de exibição. O e-mail é o mesmo usado no login.
@@ -238,7 +275,7 @@ Se o app não atualizar após um deploy, use "Recarregar App" para limpar o cach
 
 ---
 
-## 9. Funcionalidades Avançadas
+## 10. Funcionalidades Avançadas
 
 ### Multi-moeda
 Transações podem ser cadastradas em diferentes moedas (BRL, USD, EUR, GBP, ARS, CLP). O valor é exibido corretamente com o símbolo da moeda.
@@ -257,7 +294,7 @@ O app funciona offline para leitura:
 
 ---
 
-## 10. Instalação do App (PWA)
+## 11. Instalação do App (PWA)
 
 O Gestão Casa é um Progressive Web App e pode ser instalado como um aplicativo nativo:
 
@@ -286,7 +323,7 @@ O Gestão Casa é um Progressive Web App e pode ser instalado como um aplicativo
 
 ---
 
-## 11. Solução de Problemas
+## 12. Solução de Problemas
 
 ### O app não carrega / tela branca
 1. Tente "Recarregar App" nas Configurações.
