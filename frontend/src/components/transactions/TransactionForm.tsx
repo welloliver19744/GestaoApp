@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useCategories } from '../../hooks/useCategories'
+import { useGroups } from '../../hooks/useGroups'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
 import { pb, transactions as transactionsApi } from '../../api/client'
@@ -27,6 +28,7 @@ export interface FormData {
   notes: string
   currency: string
   receiptFile?: File | null
+  group?: string
 }
 
 function emptyForm(): FormData {
@@ -42,11 +44,13 @@ function emptyForm(): FormData {
     notes: '',
     currency: 'BRL',
     receiptFile: null,
+    group: '',
   }
 }
 
 export function TransactionForm({ open, onClose, onSubmit, initial }: TransactionFormProps) {
   const { data: categories } = useCategories()
+  const { data: userGroups } = useGroups()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return emptyForm()
@@ -61,6 +65,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       installment_value: initial.installment_value,
       notes: initial.notes || '',
       currency: initial.currency || 'BRL',
+      group: initial.group || '',
       receiptFile: null,
     }
   })
@@ -308,6 +313,19 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
               className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
               required
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-surface-300 mb-1.5">Grupo (opcional)</label>
+            <select
+              value={form.group}
+              onChange={e => set('group', e.target.value)}
+              className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+            >
+              <option value="">Nenhum</option>
+              {userGroups.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-1">Moeda</label>

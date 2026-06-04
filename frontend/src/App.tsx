@@ -12,6 +12,7 @@ import { Settings } from './pages/Settings'
 import { Goals } from './pages/Goals'
 import { ReceiptGallery } from './pages/ReceiptGallery'
 import { Reports } from './pages/Reports'
+import { Groups } from './pages/Groups'
 import { PwaInstallPrompt } from './components/ui/PwaInstallPrompt'
 import { Onboarding } from './components/ui/Onboarding'
 
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/goals" element={<Goals />} />
             <Route path="/receipts" element={<ReceiptGallery />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/groups" element={<Groups />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

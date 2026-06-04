@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTransactions } from '../hooks/useTransactions'
 import { TransactionCard } from '../components/transactions/TransactionCard'
 import { TransactionForm } from '../components/transactions/TransactionForm'
+import { GroupSelector } from '../components/groups/GroupSelector'
 import type { FormData } from '../components/transactions/TransactionForm'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -38,6 +40,9 @@ export function Transactions() {
   const searchRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkCategory, setBulkCategory] = useState('')
+
+  const [searchParams] = useSearchParams()
+  const activeGroup = searchParams.get('group') || ''
 
   useEffect(() => {
     categoriesApi.getFullList().then(setCategories).catch((e) => { console.error('Erro ao carregar categorias', e); toast('Erro ao carregar categorias', 'error') })
@@ -112,6 +117,9 @@ export function Transactions() {
 
   const filtered = useMemo(() => {
     let list = transactions.filter(tx => tx.due_date?.startsWith(monthStr))
+    if (activeGroup) {
+      list = list.filter(tx => tx.group === activeGroup)
+    }
     if (selectedDay) {
       list = list.filter(tx => tx.due_date === selectedDay)
     }
@@ -132,7 +140,7 @@ export function Transactions() {
       list = list.filter(tx => !tx.paid)
     }
     return list
-  }, [transactions, monthStr, selectedDay, searchQuery, filterCategory, filterPaid])
+  }, [transactions, monthStr, selectedDay, searchQuery, filterCategory, filterPaid, activeGroup])
 
   const openNew = () => { setEditing(null); setModalOpen(true) }
   const openEdit = (tx: Transaction) => { setEditing(tx); setModalOpen(true) }
@@ -167,6 +175,7 @@ export function Transactions() {
           notes: data.notes || undefined,
           receiptFile: data.receiptFile || undefined,
           created_by: pb.authStore.record?.id,
+          group: activeGroup || undefined,
         })
         toast('Transação criada', 'success')
       }
@@ -262,24 +271,9 @@ export function Transactions() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-surface-100">Transações</h1>
-          <button
-            onClick={() => monthInputRef.current?.showPicker()}
-            className="text-sm text-surface-400 hover:text-neon-cyan transition-colors text-left"
-          >
-            {filtered.length} registros em {formatMonthYear(currentMonth)}
-          </button>
-          {selectedDay && (
-            <button
-              onClick={clearDayFilter}
-              className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full bg-neon-amber/15 text-neon-amber text-xs font-medium hover:bg-neon-amber/25 transition-all"
-            >
-              <X size={12} />{formatDateBR(selectedDay)}
-            </button>
-          )}
-          <input ref={monthInputRef} type="month" value={monthStr} onChange={handleMonthPicker} className="hidden" />
-          <input ref={dayInputRef} type="date" value={today.toISOString().slice(0, 10)} onChange={handleDayPicker} className="hidden" />
         </div>
         <div className="flex items-center gap-2 self-end sm:self-auto">
+          <GroupSelector />
           <button onClick={() => navToMonth(-1)} className="p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800">
             <ChevronLeft size={18} />
           </button>

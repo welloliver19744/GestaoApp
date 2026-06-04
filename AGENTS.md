@@ -64,7 +64,10 @@ ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
 ### transactions
 - description, category (relation), store, purchase_date, total_amount, payment_type (cash|installment)
 - installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by
-- group_id, notes, receipt (file), currency, original_amount, created_by (relation), shared_with (relation[])
+- group_id, notes, receipt (file), currency, original_amount, created_by (relation), shared_with (relation[]), group (relation)
+
+### groups
+- name, description, members (relation[]), created_by (relation)
 
 ### recurring_transactions
 - description, category, store, total_amount, currency, payment_type, installment_count, installment_value
@@ -100,6 +103,7 @@ ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
 19. Suporte offline (StaleWhileRevalidate API cache, OfflineBanner)
 20. Rate limiting (Nginx 10r/s API, 3r/m login, fail2ban nginx-limit-req)
 21. Notificações e-mail (nodemailer, cron, config template)
+22. Contas familiares (groups collection, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema corrigido)
 
 ### Extras pós-plano
 - Auto-categorização AI onBlur

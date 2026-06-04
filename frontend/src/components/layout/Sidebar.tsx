@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ArrowLeftRight, Settings, PiggyBank, LogOut, Repeat, Target, Image, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Settings, PiggyBank, LogOut, Repeat, Target, Image, BarChart3, Users } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { pb } from '../../api/client'
 
@@ -8,6 +8,7 @@ const links = [
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transações' },
   { to: '/recurring', icon: Repeat, label: 'Recorrências' },
   { to: '/goals', icon: Target, label: 'Metas' },
+  { to: '/groups', icon: Users, label: 'Grupos' },
   { to: '/receipts', icon: Image, label: 'Comprovantes' },
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/settings', icon: Settings, label: 'Configurações' },

@@ -111,6 +111,7 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
         open={showShare}
         onClose={() => setShowShare(false)}
         currentSharedWith={sharedWith}
+        groupId={tx.group}
         onSave={async (userIds) => {
           await transactions.update(tx.id, { shared_with: userIds })
           setSharedWith(userIds)

@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTransactions } from '../hooks/useTransactions'
 import { useCategories } from '../hooks/useCategories'
 import { useGoals } from '../hooks/useGoals'
 import { TransactionCard } from '../components/transactions/TransactionCard'
 import { TransactionForm } from '../components/transactions/TransactionForm'
+import { GroupSelector } from '../components/groups/GroupSelector'
 import type { FormData } from '../components/transactions/TransactionForm'
 import { ChatModal } from '../components/ai/ChatModal'
 import { Card } from '../components/ui/Card'
@@ -34,6 +36,10 @@ export function Dashboard() {
   const [insights, setInsights] = useState<{ summary: string; prediction: string } | null>(null)
   const [loadingInsights, setLoadingInsights] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+
+  const [searchParams] = useSearchParams()
+  const activeGroup = searchParams.get('group') || ''
+
   const monthInputRef = useRef<HTMLInputElement>(null)
   const dayInputRef = useRef<HTMLInputElement>(null)
   const currentMonth = useMemo(() => {
@@ -73,11 +79,14 @@ export function Dashboard() {
 
   const filtered = useMemo(() => {
     let list = transactions.filter(tx => tx.due_date?.startsWith(monthStr))
+    if (activeGroup) {
+      list = list.filter(tx => tx.group === activeGroup)
+    }
     if (selectedDay) {
       list = list.filter(tx => tx.due_date === selectedDay)
     }
     return list
-  }, [transactions, monthStr, selectedDay])
+  }, [transactions, monthStr, selectedDay, activeGroup])
 
   const unpaid = filtered.filter(tx => !tx.paid)
   const totalPending = unpaid.reduce((acc, tx) => acc + tx.installment_value, 0)
@@ -228,6 +237,7 @@ export function Dashboard() {
         installment_value: data.payment_type === 'installment' ? data.installment_value : data.total_amount,
         due_date: data.purchase_date,
         notes: data.notes || undefined,
+        group: activeGroup || undefined,
       })
       toast('Transação criada', 'success')
     } catch {
@@ -263,22 +273,9 @@ export function Dashboard() {
               <X size={12} />{formatDateBR(selectedDay)}
             </button>
           )}
-          <input
-            ref={monthInputRef}
-            type="month"
-            value={monthStr}
-            onChange={handleMonthPicker}
-            className="hidden"
-          />
-          <input
-            ref={dayInputRef}
-            type="date"
-            value={today.toISOString().slice(0, 10)}
-            onChange={handleDayPicker}
-            className="hidden"
-          />
         </div>
         <div className="flex items-center gap-2 self-end sm:self-auto">
+          <GroupSelector />
           <button onClick={() => navToMonth(-1)} className="p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800">
             <ChevronLeft size={18} />
           </button>

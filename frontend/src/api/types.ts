@@ -27,6 +27,20 @@ export interface Transaction {
   currency: string
   original_amount: number | null
   shared_with: string[]
+  group: string
+}
+
+export interface Group {
+  id: string
+  collectionId: string
+  collectionName: string
+  created: string
+  updated: string
+
+  name: string
+  description: string
+  members: string[]
+  created_by: string
 }
 
 export interface TransactionCreate {
@@ -46,6 +60,13 @@ export interface TransactionCreate {
   currency?: string
   created_by?: string
   shared_with?: string[]
+  group?: string
+}
+
+export interface GroupCreate {
+  name: string
+  description?: string
+  members?: string[]
 }
 
 export interface Category {
