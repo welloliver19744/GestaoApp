@@ -103,6 +103,8 @@ export interface Goal {
   color: string
   icon: string
   owner: string
+  goal_type?: string
+  initial_amount?: number
 }
 
 export interface GoalCreate {
@@ -112,6 +114,8 @@ export interface GoalCreate {
   deadline?: string
   color?: string
   icon?: string
+  goal_type?: string
+  initial_amount?: number
 }
 
 export interface RecurringCreate {

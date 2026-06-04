@@ -34,18 +34,20 @@ export function Goals() {
     current_amount: 0,
     color: '#22d3ee',
     icon: 'piggy',
+    goal_type: 'goal',
+    initial_amount: 0,
   })
   const [addingAmount, setAddingAmount] = useState<{ id: string; val: string } | null>(null)
 
   const openNew = () => {
     setEditing(null)
-    setForm({ name: '', target_amount: 0, current_amount: 0, color: '#22d3ee', icon: 'piggy' })
+    setForm({ name: '', target_amount: 0, current_amount: 0, color: '#22d3ee', icon: 'piggy', goal_type: 'goal', initial_amount: 0 })
     setShowForm(true)
   }
 
   const openEdit = (g: Goal) => {
     setEditing(g)
-    setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, color: g.color || '#22d3ee', icon: g.icon || 'piggy', deadline: g.deadline || undefined })
+    setForm({ name: g.name, target_amount: g.target_amount, current_amount: g.current_amount, color: g.color || '#22d3ee', icon: g.icon || 'piggy', deadline: g.deadline || undefined, goal_type: g.goal_type || 'goal', initial_amount: g.initial_amount || 0 })
     setShowForm(true)
   }
 
@@ -120,6 +122,37 @@ export function Goals() {
             placeholder="Nome da meta"
             className="w-full h-10 px-3 rounded-lg bg-surface-900 border border-surface-700 text-surface-100 text-sm placeholder:text-surface-500 focus:outline-none focus:border-neon-cyan/50"
           />
+          <div>
+            <label className="text-xs text-surface-400 mb-1 block">Tipo</label>
+            <div className="flex gap-2">
+              {(['goal', 'investment'] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, goal_type: t }))}
+                  className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all ${
+                    form.goal_type === t
+                      ? 'bg-neon-cyan text-surface-950 shadow-lg shadow-neon-cyan/20'
+                      : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+                  }`}
+                >
+                  {t === 'goal' ? 'Meta' : 'Investimento'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {form.goal_type === 'investment' && (
+            <div>
+              <label className="text-xs text-surface-400 mb-1 block">Valor Inicial Investido</label>
+              <input
+                type="number"
+                value={form.initial_amount || ''}
+                onChange={e => setForm(f => ({ ...f, initial_amount: parseFloat(e.target.value) || 0 }))}
+                placeholder="R$ 0,00"
+                className="w-full h-10 px-3 rounded-lg bg-surface-900 border border-surface-700 text-surface-100 text-sm placeholder:text-surface-500 focus:outline-none focus:border-neon-cyan/50"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-surface-400 mb-1 block">Valor Alvo</label>
@@ -204,8 +237,11 @@ export function Goals() {
       ) : (
         <div className="space-y-4">
           {goals.map(g => {
+            const isInvestment = g.goal_type === 'investment'
             const pct = Math.min((g.current_amount / g.target_amount) * 100, 100)
             const remaining = g.target_amount - g.current_amount
+            const initialAmt = g.initial_amount || g.current_amount
+            const appreciation = isInvestment && initialAmt > 0 ? ((g.current_amount - initialAmt) / initialAmt) * 100 : 0
             return (
               <Card key={g.id}>
                 <div className="flex items-start justify-between mb-3">
@@ -214,7 +250,14 @@ export function Goals() {
                       <GoalIcon icon={g.icon} color={g.color} />
                     </div>
                     <div>
-                      <h3 className="font-medium text-surface-100">{g.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-surface-100">{g.name}</h3>
+                        {isInvestment && (
+                          <span className="text-[10px] bg-neon-purple/15 text-neon-purple px-1.5 py-0.5 rounded-full font-medium">
+                            Investimento
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-surface-400">
                         {formatCurrency(g.current_amount)} / {formatCurrency(g.target_amount)}
                         {g.deadline ? ` · até ${new Date(g.deadline).toLocaleDateString('pt-BR')}` : ''}
@@ -231,17 +274,35 @@ export function Goals() {
                   </div>
                 </div>
 
-                <div className="h-2.5 bg-surface-800 rounded-full overflow-hidden mb-3">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${pct}%`, backgroundColor: g.color || '#22d3ee' }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-surface-400">{pct.toFixed(0)}% concluído</span>
-                  <span className="text-surface-500">Faltam {formatCurrency(remaining)}</span>
-                </div>
+                {isInvestment ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div className="p-3 rounded-lg bg-surface-800/50">
+                        <p className="text-xs text-surface-500">Valor Investido</p>
+                        <p className="text-sm font-semibold text-surface-100 mt-0.5">{formatCurrency(initialAmt)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-surface-800/50">
+                        <p className="text-xs text-surface-500">Valorização</p>
+                        <p className={`text-sm font-semibold mt-0.5 ${appreciation >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+                          {appreciation >= 0 ? '+' : ''}{appreciation.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2.5 bg-surface-800 rounded-full overflow-hidden mb-3">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${pct}%`, backgroundColor: g.color || '#22d3ee' }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs mb-3">
+                      <span className="text-surface-400">{pct.toFixed(0)}% concluído</span>
+                      <span className="text-surface-500">Faltam {formatCurrency(remaining)}</span>
+                    </div>
+                  </>
+                )}
 
                 {/* Quick add */}
                 {addingAmount?.id === g.id ? (
