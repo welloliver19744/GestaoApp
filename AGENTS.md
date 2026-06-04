@@ -137,6 +137,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Tema claro:** classe `.light` no HTML com paleta invertida (sem mudar componentes)
 - **SW caching:** StaleWhileRevalidate para GET, NetworkOnly para mutations
 - **Rate limit:** Nginx level (não PocketBase) para simplicidade
+- **Auto-fetch modelos AI:** Ao trocar de provedor nas Configurações, `fetchModels()` é chamado automaticamente (com overrides de provider/endpoint para evitar stale closure). Também dispara ao carregar página (se já tiver API key) e ao salvar a chave.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)

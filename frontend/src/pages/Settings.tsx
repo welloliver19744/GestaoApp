@@ -33,7 +33,13 @@ export function Settings() {
   const [showKey, setShowKey] = useState(false)
   const [aiSaved, setAiSaved] = useState(false)
 
-  useEffect(() => { setAiConfig(getAIConfig()) }, [])
+  useEffect(() => {
+    const config = getAIConfig()
+    setAiConfig(config)
+    if (config.apiKey && config.provider !== 'custom') {
+      fetchModels({ provider: config.provider, endpoint: config.endpoint, apiKey: config.apiKey })
+    }
+  }, [])
 
   const handleSave = async () => {
     setSaving(true)
@@ -53,6 +59,9 @@ export function Settings() {
     saveAIConfig(aiConfig)
     setAiSaved(true)
     setTimeout(() => setAiSaved(false), 2000)
+    if (aiConfig.apiKey && aiConfig.provider !== 'custom') {
+      fetchModels()
+    }
   }
 
   const updateAI = <K extends keyof AIConfig>(key: K, value: AIConfig[K]) => {
@@ -65,12 +74,13 @@ export function Settings() {
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState('')
 
-  const fetchModels = async () => {
-    if (!aiConfig.apiKey) return
+  const fetchModels = async (overrides?: { provider?: string; endpoint?: string; apiKey?: string }) => {
+    const apiKey = overrides?.apiKey || aiConfig.apiKey
+    const provider = overrides?.provider || aiConfig.provider
+    if (!apiKey) return
     setLoadingModels(true)
     setModelsError('')
     try {
-      const { provider, apiKey } = aiConfig
       let url: string
       let options: RequestInit = { headers: {} }
 
@@ -80,7 +90,7 @@ export function Settings() {
       } else if (provider === 'google') {
         url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
       } else {
-        const baseUrl = aiConfig.endpoint || DEFAULT_ENDPOINTS[provider]
+        const baseUrl = overrides?.endpoint || aiConfig.endpoint || DEFAULT_ENDPOINTS[provider]
         url = `${baseUrl}/models`
         options.headers = { Authorization: `Bearer ${apiKey}` }
       }
@@ -107,15 +117,16 @@ export function Settings() {
 
   const handleProviderChange = (provider: string) => {
     const p = PROVIDERS.find(p => p.value === provider)
+    setModels(null)
+    setModelsError('')
     if (p && provider !== 'custom') {
       updateAI('provider', provider)
       updateAI('endpoint', p.endpoint)
       updateAI('model', p.model)
+      fetchModels({ provider, endpoint: p.endpoint })
     } else {
       updateAI('provider', provider)
     }
-    setModels(null)
-    setModelsError('')
   }
 
   const push = usePushNotifications()
@@ -216,11 +227,11 @@ export function Settings() {
                 />
               )}
               {aiConfig.apiKey && (models ? (
-                <Button onClick={fetchModels} disabled={loadingModels} variant="secondary">
+                <Button onClick={() => fetchModels()} disabled={loadingModels} variant="secondary">
                   <RefreshCw size={16} className={loadingModels ? 'animate-spin' : ''} />
                 </Button>
               ) : (
-                <Button onClick={fetchModels} disabled={loadingModels}>
+                <Button onClick={() => fetchModels()} disabled={loadingModels}>
                   {loadingModels ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
