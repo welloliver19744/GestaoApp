@@ -54,6 +54,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 0 3 * * * backup.sh              # Backup diário
 0 8 * * * send-push.js           # Push notifications
 5 8 * * * send-email-notifications.js  # Email notifications
+8 8 * * * node /home/ubuntu/gestaocasa/scripts/send-discord.js >> /home/ubuntu/gestaocasa/scripts/push.log 2>&1  # Discord
 ```
 
 ## PocketBase (v0.39)

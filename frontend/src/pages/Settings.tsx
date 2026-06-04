@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { pb } from '../api/client'
-import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon } from 'lucide-react'
+import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon, MessageCircle } from 'lucide-react'
 import { getAIConfig, saveAIConfig, DEFAULT_ENDPOINTS, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useTheme } from '../hooks/useTheme'
@@ -28,6 +28,8 @@ export function Settings() {
   const [name, setName] = useState(user?.name || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [discordWebhook, setDiscordWebhook] = useState(() => localStorage.getItem('gestaocasa_discord_webhook') || '')
+  const [discordSaved, setDiscordSaved] = useState(false)
 
   const [aiConfig, setAiConfig] = useState<AIConfig>(getAIConfig)
   const [showKey, setShowKey] = useState(false)
@@ -52,6 +54,29 @@ export function Settings() {
       console.error(e)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSaveDiscord = () => {
+    localStorage.setItem('gestaocasa_discord_webhook', discordWebhook)
+    setDiscordSaved(true)
+    setTimeout(() => setDiscordSaved(false), 2000)
+  }
+
+  const handleTestDiscord = async () => {
+    if (!discordWebhook) return
+    try {
+      const res = await fetch(discordWebhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: '🔔 **Teste de notificação**\nSe você recebeu esta mensagem, as notificações Discord estão funcionando!',
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      alert('✅ Notificação de teste enviada com sucesso!')
+    } catch (e) {
+      alert('❌ Erro ao enviar: ' + (e instanceof Error ? e.message : 'erro desconhecido'))
     }
   }
 
@@ -339,6 +364,45 @@ export function Settings() {
           </p>
           <p className="text-xs text-surface-500">
             Os e-mails são enviados automaticamente todos os dias às 08:05 para o e-mail cadastrado na sua conta.
+          </p>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <MessageCircle size={18} className="text-neon-cyan" />
+          <h2 className="text-sm font-semibold text-surface-200">Notificações Discord</h2>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-surface-300 mb-1.5">Webhook URL</label>
+            <div className="flex gap-2">
+              <input
+                value={discordWebhook}
+                onChange={e => setDiscordWebhook(e.target.value)}
+                className="flex-1 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+                placeholder="https://discord.com/api/webhooks/..."
+              />
+              <Button onClick={handleSaveDiscord}>
+                {discordSaved ? 'Salvo ✓' : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleTestDiscord} disabled={!discordWebhook} variant="secondary" className="flex-1">
+              Enviar teste
+            </Button>
+            <Button
+              onClick={() => { setDiscordWebhook(''); localStorage.removeItem('gestaocasa_discord_webhook') }}
+              variant="secondary"
+              disabled={!discordWebhook}
+            >
+              Limpar
+            </Button>
+          </div>
+          <p className="text-xs text-surface-500">
+            Crie um webhook no Discord: Configurações do canal → Integrações → Webhooks → Copiar URL.
+            As notificações de contas a vencer serão enviadas automaticamente às 08:00.
           </p>
         </div>
       </Card>
