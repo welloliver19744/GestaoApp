@@ -9,17 +9,13 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useToast } from '../components/ui/Toast'
 import { TransactionCardSkeleton } from '../components/ui/Skeleton'
-import { Plus, ChevronLeft, ChevronRight, X, Download, Search, Filter, Square, CheckSquare } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Download, Search, Filter, Square, CheckSquare } from 'lucide-react'
 import { formatMonthYear } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
 import type { Category } from '../api/types'
 import { pb, categories as categoriesApi } from '../api/client'
 
-function formatDateBR(dateStr: string) {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
-}
 
 export function Transactions() {
   const { data: transactions, loading, togglePaid, create, update, remove } = useTransactions({ sort: '-purchase_date' })
@@ -78,7 +74,6 @@ export function Transactions() {
   const today = new Date()
   const [monthOffset, setMonthOffset] = useState(0)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
-  const monthInputRef = useRef<HTMLInputElement>(null)
   const dayInputRef = useRef<HTMLInputElement>(null)
   const currentMonth = useMemo(() => {
     const d = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1)
@@ -87,33 +82,10 @@ export function Transactions() {
 
   const monthStr = currentMonth.toISOString().slice(0, 7)
 
-  const goToMonth = (year: number, month: number) => {
-    const offset = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
-    setMonthOffset(offset)
-  }
-
-  const handleMonthPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.value
-    if (!picked) return
-    const [year, month] = picked.split('-').map(Number)
-    goToMonth(year, month)
-    setSelectedDay(null)
-  }
-
-  const handleDayPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.value
-    if (!picked) return
-    const [year, month] = picked.split('-').map(Number)
-    goToMonth(year, month)
-    setSelectedDay(picked)
-  }
-
   const navToMonth = (offset: number) => {
     setMonthOffset(p => p + offset)
     setSelectedDay(null)
   }
-
-  const clearDayFilter = () => setSelectedDay(null)
 
   const filtered = useMemo(() => {
     let list = transactions.filter(tx => tx.due_date?.startsWith(monthStr))

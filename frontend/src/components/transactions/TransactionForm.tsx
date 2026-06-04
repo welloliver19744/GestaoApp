@@ -78,7 +78,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const [stores, setStores] = useState<string[]>([])
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
   const storeRef = useRef<HTMLDivElement>(null)
-  const autoCatTimer = useRef<ReturnType<typeof setTimeout>>()
+  const autoCatTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
     transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {

@@ -49,27 +49,6 @@ export function Dashboard() {
 
   const monthStr = currentMonth.toISOString().slice(0, 7)
 
-  const goToMonth = (year: number, month: number) => {
-    const offset = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
-    setMonthOffset(offset)
-  }
-
-  const handleMonthPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.value
-    if (!picked) return
-    const [year, month] = picked.split('-').map(Number)
-    goToMonth(year, month)
-    setSelectedDay(null)
-  }
-
-  const handleDayPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.value
-    if (!picked) return
-    const [year, month] = picked.split('-').map(Number)
-    goToMonth(year, month)
-    setSelectedDay(picked)
-  }
-
   const navToMonth = (offset: number) => {
     setMonthOffset(p => p + offset)
     setSelectedDay(null)
@@ -462,8 +441,8 @@ export function Dashboard() {
                   <tfoot>
                     <tr className="border-t border-surface-700">
                       <td className="px-5 py-2.5 text-surface-200 font-medium">Total</td>
-                      <td className="px-5 py-2.5 text-right text-surface-100 font-medium">{formatCurrency(curByCat.values().reduce((a, b) => a + b, 0))}</td>
-                      <td className="px-5 py-2.5 text-right text-surface-400 font-medium">{formatCurrency(prevByCat.values().reduce((a, b) => a + b, 0))}</td>
+                      <td className="px-5 py-2.5 text-right text-surface-100 font-medium">{formatCurrency([...curByCat.values()].reduce((a, b) => a + b, 0))}</td>
+                      <td className="px-5 py-2.5 text-right text-surface-400 font-medium">{formatCurrency([...prevByCat.values()].reduce((a, b) => a + b, 0))}</td>
                       <td className={`px-5 py-2.5 text-right font-medium ${monthComparison.diff > 0 ? 'text-neon-red' : monthComparison.diff < 0 ? 'text-neon-green' : 'text-surface-500'}`}>
                         {monthComparison.pct !== 0 ? `${monthComparison.pct > 0 ? '+' : ''}${monthComparison.pct.toFixed(0)}%` : '—'}
                       </td>

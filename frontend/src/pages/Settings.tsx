@@ -3,7 +3,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { pb } from '../api/client'
 import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon } from 'lucide-react'
-import { getAIConfig, saveAIConfig, type AIConfig } from '../lib/ai'
+import { getAIConfig, saveAIConfig, DEFAULT_ENDPOINTS, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useTheme } from '../hooks/useTheme'
 import { Mail } from 'lucide-react'
@@ -61,6 +61,48 @@ export function Settings() {
 
   const selectedProvider = PROVIDERS.find(p => p.value === aiConfig.provider)
 
+  const [models, setModels] = useState<string[] | null>(null)
+  const [loadingModels, setLoadingModels] = useState(false)
+  const [modelsError, setModelsError] = useState('')
+
+  const fetchModels = async () => {
+    if (!aiConfig.apiKey) return
+    setLoadingModels(true)
+    setModelsError('')
+    try {
+      const baseUrl = aiConfig.endpoint || DEFAULT_ENDPOINTS[aiConfig.provider]
+      const res = await fetch(`${baseUrl}/models`, {
+        headers: { Authorization: `Bearer ${aiConfig.apiKey}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      const list: string[] = (data.data || data.models || [])
+        .map((m: any) => m.id)
+        .filter(Boolean)
+        .sort()
+      if (list.length === 0) throw new Error('Nenhum modelo encontrado')
+      setModels(list)
+    } catch (e: any) {
+      setModelsError(e.message || 'Erro ao buscar modelos')
+      setModels(null)
+    } finally {
+      setLoadingModels(false)
+    }
+  }
+
+  const handleProviderChange = (provider: string) => {
+    const p = PROVIDERS.find(p => p.value === provider)
+    if (p && provider !== 'custom') {
+      updateAI('provider', provider)
+      updateAI('endpoint', p.endpoint)
+      updateAI('model', p.model)
+    } else {
+      updateAI('provider', provider)
+    }
+    setModels(null)
+    setModelsError('')
+  }
+
   const push = usePushNotifications()
   const { theme, toggle } = useTheme()
 
@@ -113,17 +155,7 @@ export function Settings() {
             <label className="block text-sm font-medium text-surface-300 mb-1.5">Provedor</label>
               <select
                 value={aiConfig.provider}
-                onChange={e => {
-                  const provider = e.target.value
-                  const p = PROVIDERS.find(p => p.value === provider)
-                  if (p && provider !== 'custom') {
-                    updateAI('provider', provider)
-                    updateAI('endpoint', p.endpoint)
-                    updateAI('model', p.model)
-                  } else {
-                    updateAI('provider', provider)
-                  }
-                }}
+                onChange={e => handleProviderChange(e.target.value)}
                 className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
               >
                 {PROVIDERS.map(p => (
@@ -149,12 +181,42 @@ export function Settings() {
             <label className="block text-sm font-medium text-surface-300 mb-1.5">
               {selectedProvider?.label || 'Custom'} - Modelo
             </label>
-            <input
-              value={aiConfig.model}
-              onChange={e => updateAI('model', e.target.value)}
-              className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
-              placeholder="gpt-4o-mini"
-            />
+            <div className="flex gap-2">
+              {models ? (
+                <select
+                  value={aiConfig.model}
+                  onChange={e => updateAI('model', e.target.value)}
+                  className="flex-1 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+                >
+                  {models.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={aiConfig.model}
+                  onChange={e => updateAI('model', e.target.value)}
+                  className="flex-1 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+                  placeholder="gpt-4o-mini"
+                />
+              )}
+              {aiConfig.apiKey && (models ? (
+                <Button onClick={fetchModels} disabled={loadingModels} variant="secondary">
+                  <RefreshCw size={16} className={loadingModels ? 'animate-spin' : ''} />
+                </Button>
+              ) : (
+                <Button onClick={fetchModels} disabled={loadingModels}>
+                  {loadingModels ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    'Buscar modelos'
+                  )}
+                </Button>
+              ))}
+            </div>
+            {modelsError && (
+              <p className="text-xs text-neon-red mt-1">{modelsError}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-1.5">API Key</label>

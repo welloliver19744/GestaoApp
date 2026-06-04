@@ -5,10 +5,10 @@ import { Modal } from '../components/ui/Modal'
 import { useGroups } from '../hooks/useGroups'
 import { pb } from '../api/client'
 import type { User } from '../api/types'
-import { Users, Plus, Settings2, Trash2, UserPlus, X, UserIcon } from 'lucide-react'
+import { Users, Plus, Settings2, Trash2, X, UserIcon } from 'lucide-react'
 
 export function Groups() {
-  const { data: groupsList, loading, create, update, remove, addMember, removeMember } = useGroups()
+  const { data: groupsList, loading, create, update, remove } = useGroups()
   const me = pb.authStore.record?.id
 
   const [showCreate, setShowCreate] = useState(false)

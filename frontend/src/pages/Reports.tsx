@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
-import { pb, transactions, categories as categoriesApi } from '../api/client'
+import { transactions, categories as categoriesApi } from '../api/client'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { formatCurrency, formatMonthYear } from '../lib/utils'
+import { formatCurrency } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction, Category } from '../api/types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts'
@@ -146,7 +146,7 @@ export function Reports() {
                 <Tooltip
                   contentStyle={{ background: '#1e1e2e', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: '#e4e4e7' }}
-                  formatter={(value: number) => [formatCurrency(value), '']}
+                  formatter={(value: any) => [formatCurrency(Number(value) || 0), '']}
                 />
                 <Bar dataKey="total" fill="#22d3ee" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="paid" fill="#4ade80" radius={[4, 4, 0, 0]} />
@@ -168,7 +168,7 @@ export function Reports() {
             <p className="text-sm text-surface-500">Nenhum gasto no ano</p>
           ) : (
             <div className="space-y-3">
-              {byCategory.map(([catId, total], i) => {
+              {byCategory.map(([catId, total]) => {
                 const pct = (total / yearlyTotal) * 100
                 return (
                   <div key={catId}>
@@ -204,7 +204,7 @@ export function Reports() {
                   <Tooltip
                     contentStyle={{ background: '#1e1e2e', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: '#e4e4e7' }}
-                    formatter={(value: number) => [formatCurrency(value), '']}
+                  formatter={(value: any) => [formatCurrency(Number(value) || 0), '']}
                   />
                   <Line type="monotone" dataKey="total" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3, fill: '#22d3ee' }} />
                   <Line type="monotone" dataKey="paid" stroke="#4ade80" strokeWidth={2} dot={{ r: 3, fill: '#4ade80' }} strokeDasharray="4 4" />
