@@ -139,6 +139,9 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Rate limit:** Nginx level (não PocketBase) para simplicidade
 - **Auto-fetch modelos AI:** Ao trocar de provedor nas Configurações, `fetchModels()` é chamado automaticamente (com overrides de provider/endpoint para evitar stale closure). Também dispara ao carregar página (se já tiver API key) e ao salvar a chave.
 
+## Implementado Recentemente
+- **Scanner de código de barras:** Botão "Código" no TransactionForm. Usa `BarcodeDetector` API (Chrome/Edge, Android). Abre a câmera, detecta código de barras e busca dados do produto na Open Food Facts (grátis, sem chave). Preenche descrição, marca e preço automaticamente. Fallback: mostra o código como descrição. Não funciona no iPhone Safari.
+
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
 - Notificações WhatsApp/Telegram
@@ -148,5 +151,4 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Dashboard customizável (usuário escolhe cards)
 - Metas compartilhadas (grupo contribui para mesma meta)
 - Modo escuro automático (follow system)
-- Scanner de código de barras para notas fiscais
 - Suporte a mais idiomas (inglês, espanhol)

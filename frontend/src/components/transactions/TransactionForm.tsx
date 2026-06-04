@@ -5,9 +5,10 @@ import { useCategories } from '../../hooks/useCategories'
 import { useGroups } from '../../hooks/useGroups'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
+import { scanBarcode, lookupBarcode } from '../../lib/barcode'
 import { pb, transactions as transactionsApi } from '../../api/client'
 import type { Transaction, PaymentType } from '../../api/types'
-import { Camera, Loader2, Wand2, X } from 'lucide-react'
+import { Camera, Loader2, Wand2, X, Scan } from 'lucide-react'
 
 interface TransactionFormProps {
   open: boolean
@@ -71,6 +72,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   })
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [barcoding, setBarcoding] = useState(false)
   const [categorizing, setCategorizing] = useState(false)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(
     initial?.receipt ? pb.files.getUrl(initial, initial.receipt, { thumb: '640x480' }) : null,
@@ -145,6 +147,32 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     }
   }
 
+  const handleBarcodeScan = async () => {
+    setBarcoding(true)
+    try {
+      const barcode = await scanBarcode()
+      const product = await lookupBarcode(barcode)
+      if (product) {
+        setForm(prev => ({
+          ...prev,
+          description: product.name,
+          store: product.brand || prev.store,
+          total_amount: product.price || prev.total_amount,
+        }))
+      } else {
+        setForm(prev => ({
+          ...prev,
+          description: `Produto #${barcode}`,
+          notes: prev.notes || `Código de barras: ${barcode}`,
+        }))
+      }
+    } catch (e) {
+      alert('Erro ao escanear: ' + (e instanceof Error ? e.message : 'erro desconhecido'))
+    } finally {
+      setBarcoding(false)
+    }
+  }
+
   const clearReceipt = () => {
     setForm(prev => ({ ...prev, receiptFile: null }))
     setReceiptPreview(null)
@@ -186,16 +214,28 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-surface-300">Descrição</label>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={scanning || !aiConfig.apiKey}
-              className="flex items-center gap-1.5 text-xs text-neon-cyan hover:text-neon-cyan/80 disabled:text-surface-600 disabled:cursor-not-allowed transition-colors"
-              title={!aiConfig.apiKey ? 'Configure a API Key em Configurações' : 'Escanear conta'}
-            >
-              {scanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-              {scanning ? 'Lendo...' : 'Scan'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={scanning || !aiConfig.apiKey}
+                className="flex items-center gap-1.5 text-xs text-neon-cyan hover:text-neon-cyan/80 disabled:text-surface-600 disabled:cursor-not-allowed transition-colors"
+                title={!aiConfig.apiKey ? 'Configure a API Key em Configurações' : 'Escanear conta'}
+              >
+                {scanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                {scanning ? 'Lendo...' : 'Scan'}
+              </button>
+              <button
+                type="button"
+                onClick={handleBarcodeScan}
+                disabled={barcoding}
+                className="flex items-center gap-1.5 text-xs text-neon-purple hover:text-neon-purple/80 disabled:text-surface-600 disabled:cursor-not-allowed transition-colors"
+                title="Escanear código de barras"
+              >
+                {barcoding ? <Loader2 size={14} className="animate-spin" /> : <Scan size={14} />}
+                {barcoding ? 'Escaneando...' : 'Código'}
+              </button>
+            </div>
           </div>
           <input
             ref={fileInputRef}
