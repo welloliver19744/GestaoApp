@@ -1,18 +1,31 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst } from 'workbox-strategies'
+import { StaleWhileRevalidate, NetworkOnly } from 'workbox-strategies'
+import { ExpirationPlugin } from 'workbox-expiration'
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis
 
 precacheAndRoute(self.__WB_MANIFEST)
 
+// API GET: serve cached, update in background
 registerRoute(
-  /\/api\/.*/,
-  new NetworkFirst({
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
+  new StaleWhileRevalidate({
     cacheName: 'api-cache',
-    networkTimeoutSeconds: 5,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 200,
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+      }),
+    ],
   }),
+)
+
+// API mutations: network only
+registerRoute(
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method !== 'GET',
+  new NetworkOnly(),
 )
 
 self.addEventListener('push', (event) => {
