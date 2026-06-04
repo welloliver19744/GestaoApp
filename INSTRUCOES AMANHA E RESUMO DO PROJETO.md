@@ -32,79 +32,58 @@
 ### 9. Multi‑moeda
 - Campos `currency` e `original_amount` nas transações, utilitário `formatCurrency(value, currency?)`, seletor de moeda no formulário, exibição correta em cards e relatórios.
 
-### 10. **Compartilhamento de Contas** (em andamento)
+### 10. **Compartilhamento de Contas** (concluído)
 - **Banco:** campos `shared_with` (relation many‑to‑many com users) e `created_by` adicionados na coleção `transactions`.
 - **Regra de listagem:** `@request.auth.id != "" && (created_by = @request.auth.id || shared_with ?= @request.auth.id)`.
-- **Frontend:** tipos atualizados (`Transaction`, `TransactionCreate`), componente **ShareModal** com lista de usuários (fetch via `fetchUsers`), botão de compartilhamento e badge nos cards, payload de criação inclui `created_by`.
-- **Back‑fill:** script para popular `created_by` em registros existentes.
-- **Teste manual:** verificado que usuário A cria, compartilha com B, B vê a transação; usuários não compartilhados não vêem.
+- **Frontend:** tipos atualizados (`Transaction`, `TransactionCreate`), componente **ShareModal** com lista de usuários, botão de compartilhamento e badge nos cards, payload de criação inclui `created_by`.
+- **Testes:** 7 testes automatizados no `share-modal.test.tsx`.
 
-### 11. Segurança e Infraestrutura *(pronto, só falta aplicar no servidor)*
-- **scripts/fail2ban.conf** – config padrão (bande 1 h, 5 tentativas, protege SSH).
-- **scripts/setup_ufw.sh** – regras UFW: permite SSH, 80/443, porta pública 8091 (Kong/Nginx), habilita firewall.
-- **scripts/healthcheck.sh** – script Bash que verifica `/api/health` do PocketBase e retorna 0/1.
-- **.github/workflows/ci.yml** – pipeline CI/CD no GitHub Actions (checkout, npm ci, lint, build, testes, escaneamento de segredos com TruffleHog).
-- **SECURITY_SETUP_GUIDE.md** – guia passo‑a‑passo para copiar os scripts para o servidor, instalar fail2ban, configurar UFW, agendar health‑check e validar CI.
+### 11. Segurança e Infraestrutura *(aplicado no servidor)*
+- **Fail2Ban:** instalado e ativo (`/etc/fail2ban/jail.local`, 5 tentativas, ban 1 h).
+- **UFW:** instalado e ativo (portas 22, 80, 443, 3001, 8091).
+- **Health‑check:** script agendado via systemd timer a cada 5 min.
+- **CI/CD:** `.github/workflows/ci.yml` configurado.
 
-### 12. Testes (pendente)
-- Ainda não há testes automatizados; a próxima fase será criar testes unitários/componente (Vitest) para as partes críticas (ShareModal, formatCurrency, compressImage, etc.) e integrar ao CI.
+### 12. Correções aplicadas durante o desenvolvimento
+- **403 Forbidden:** permissão do `dist/` corrigida para 755 no servidor.
+- **Build errors:** imports corrigidos (`pb` ausente em `Transactions.tsx`, `Button` não usado em `TransactionCard.tsx`).
+- **PocketBase URL:** `client.ts` alterado para usar `window.location.origin` (antes `http://localhost:8090` não funcionava do navegador). Nginx proxy `/api/` → PocketBase.
+- **vite.config.ts:** ajustado para `vitest/config`.
 
----
-
-## Instruções para amanhã (passos a seguir)
-
-### 1. Aplicar segurança no servidor
-1. **Acessar** o servidor via SSH.
-2. **Transferir** a pasta `scripts/` (scp) para o diretório `/home/<usuario>/gestaocasa/`.
-3. **Instalar** e habilitar **fail2ban**:
-   ```bash
-   sudo cp /home/<usuario>/gestaocasa/fail2ban.conf /etc/fail2ban/jail.local
-   sudo apt-get update && sudo apt-get install -y fail2ban
-   sudo systemctl restart fail2ban
-   sudo systemctl status fail2ban
-   ```
-4. **Configurar firewall UFW**:
-   ```bash
-   chmod +x /home/<usuario>/gestaocasa/setup_ufw.sh
-   sudo /home/<usuario>/gestaocasa/setup_ufw.sh
-   sudo ufw status verbose
-   ```
-5. **Instalar health‑check** e agendar:
-   - Tornar executável: `chmod +x healthcheck.sh`.
-   - Testar: `./healthcheck.sh` (deve retornar "Health check passed").
-   - Agendar com **systemd timer** (recomendado) ou **cron** (exemplo no guide).
-
-### 2. Validar o workflow CI/CD
-1. **Commit** e **push** as alterações restantes ao GitHub:
-   ```bash
-   git add .
-   git commit -m "Add security scripts and CI workflow"
-   git push origin main
-   ```
-2. Acessar a aba **Actions** no repositório e acompanhar a execução.
-3. Se houver falhas (por exemplo, lint ou testes), corrigi‑las antes de avançar.
-
-### 3. Implementar testes automáticos (Item 12)
-1. Instalar Vitest (já está como dependência): `npm i -D vitest @testing-library/react` dentro da pasta `frontend`.
-2. Criar arquivos de teste:
-   - `frontend/tests/ShareModal.test.tsx` → verifica carregamento de usuários, seleção múltipla e chamada PATCH.
-   - `frontend/tests/utils.test.ts` → cobre `formatCurrency` (incluindo moeda opcional) e `compressImage` (mock de canvas).
-3. Atualizar o script de CI (`npm test --if-present`) para garantir que falhe caso algum teste quebre.
-4. Rodar localmente: `npm test` e depois subir as mudanças.
-
-### 4. Revisão final do compartilhamento
-- Testar fluxo completo com duas contas reais (criar, compartilhar, des‑compartilhar) e confirmar que as regras de listagem continuam corretas.
-- Garantir que a badge "Compartilhada" aparece nos cards das transações que têm `shared_with`.
+### 13. Testes automatizados (24 testes, todos passando)
+- `tests/utils.test.ts` – 12 testes (formatCurrency, formatDate, cn)
+- `tests/export.test.ts` – 2 testes (exportCSV)
+- `tests/toast.test.tsx` – 3 testes (ToastProvider)
+- `tests/share-modal.test.tsx` – 7 testes (ShareModal)
+- CI integrado com `npm test --if-present` no GitHub Actions
 
 ---
 
-## Checklist rápido (para marcar amanhã)
-- [ ] Fail2ban instalado e ativo
-- [ ] UFW configurado e habilitado
-- [ ] Health‑check rodando a cada 5 min
-- [ ] CI/CD executando sem erros
-- [ ] Testes Vitest criados e passando
-- [ ] Fluxo de compartilhamento testado com duas contas
+## ✅ Projeto completo – próximos passos
+
+O projeto está finalizado. Para manutenção futura:
+
+### Rebuild e deploy
+```bash
+cd frontend
+npm run build
+scp -r dist/* servidor:/home/ubuntu/gestaocasa/frontend/dist/
+ssh servidor "find /home/ubuntu/gestaocasa/frontend/dist -type d -exec chmod 755 {} \; -o -type f -exec chmod 644 {} \;"
+```
+
+### Rodar testes
+```bash
+cd frontend
+npm test          # modo run
+npm run test:watch # modo watch
+```
+
+### Atualizar via Git
+```bash
+git add .
+git commit -m "descrição"
+git push
+```
 
 ---
 

@@ -27,29 +27,28 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 - Coleção `goals`, CRUD UI, barra de progresso, visualização no dashboard.
 ### 9. Multi‑moeda
 - Campos `currency` e `original_amount`, utilitário `formatCurrency(value, currency?)`, seletor de moeda no formulário, exibição correta.
-### 10. Compartilhamento de contas (em andamento)
+### 10. Compartilhamento de contas (concluído)
 - **Backend:** campos `shared_with` (many‑to‑many com users) e `created_by` na coleção `transactions`.
 - **Regra de listagem:** `@request.auth.id != "" && (created_by = @request.auth.id || shared_with ?= @request.auth.id)`.
-- **Frontend:** tipos atualizados, componente `ShareModal` que lista usuários (via `fetchUsers`), botão de compartilhamento nos cards, badge indicando que está compartilhada, payload inclui `created_by`.
+- **Frontend:** tipos atualizados, componente `ShareModal` (lista usuários, seleção múltipla, PATCH), botão de compartilhamento nos cards, badge "Compartilhado", payload inclui `created_by`.
 - **Back‑fill:** script para popular `created_by` nos registros existentes.
-- **Teste manual:** verificado que o usuário A cria, compartilha com B, B vê; usuários não compartilhados não veem.
+- **Teste manual + automatizado:** 7 testes no `share-modal.test.tsx` cobrindo render, seleção, save, cancel, empty state.
 ### 11. Segurança e Infraestrutura (aplicado no servidor)
 - **Fail2Ban:** instalado e ativo, config `/etc/fail2ban/jail.local` (5 tentativas, ban 1 h).
 - **UFW:** instalado e ativo, regras: SSH (22), HTTP (80), HTTPS (443), API (8091), Nginx (3001).
 - **Health‑check:** script em `/home/ubuntu/gestaocasa/scripts/healthcheck.sh`, agendado via systemd timer a cada 5 min.
 - `.github/workflows/ci.yml` – CI/CD no GitHub Actions (checkout, npm ci, lint, build, testes, TruffleHog).
-### 12. Correção de deploy
-- **Problema:** Nginx retornava 403 Forbidden porque o diretório `dist/` estava com permissão `700` (não legível pelo nginx).
-- **Solução:** `chmod 755` nos diretórios e `chmod 644` nos arquivos dentro de `dist/` no servidor.
-- **Build:** corrigidos imports ausentes (`pb` em `Transactions.tsx`) e import não utilizado (`Button` em `TransactionCard.tsx`), rebuildado e copiado para o servidor via SCP.
-### 13. Testes (pendente)
-- Ainda não há testes automatizados; próximo passo será criar testes unitários/componente com Vitest e integrá‑los ao CI.
-
-## Próximos passos recomendados
-1. **Aplicar segurança no servidor** (fail2ban, UFW, health‑check).
-2. **Validar CI/CD** – fazer push para `main` e confirmar a execução no GitHub Actions.
-3. **Implementar testes** (Vitest) para as áreas críticas (ShareModal, utils, compressImage).
-4. **Revisar fluxo de compartilhamento** com duas contas reais e garantir que as regras de listagem continuam corretas.
+### 12. Correções de deploy e bugs
+- **403 Forbidden:** permissão do `dist/` alterada de `700` para `755` no servidor.
+- **Build errors:** removido import não utilizado (`Button` em `TransactionCard.tsx`), adicionado import faltante (`pb` em `Transactions.tsx`).
+- **PocketBase URL:** alterado `client.ts` para usar `window.location.origin` em produção (antes usava `http://localhost:8090`, que não funcionava do navegador). Nginx proxy `/api/` → PocketBase.
+- **vite.config.ts:** ajustado para `vitest/config` (TS não reconhecia `test`).
+### 13. Testes automatizados (24 testes, todos passando)
+- `tests/utils.test.ts` (12) – `formatCurrency`, `formatDate`, `formatMonthYear`, `cn`
+- `tests/export.test.ts` (2) – `exportCSV` gera CSV e cria link de download
+- `tests/toast.test.tsx` (3) – `ToastProvider` renderiza, mostra toast e estiliza erro
+- `tests/share-modal.test.tsx` (7) – abre/fecha, carrega usuários, seleciona, salva, cancela, empty state
+- CI integrado: `npm test --if-present` roda no GitHub Actions
 
 ---
 

@@ -1,80 +1,45 @@
 # INSTRUCOES_AMANHA.md
 
-## Segurança e Infraestrutura (Item 11)
+## ✅ Projeto completo – tudo já foi aplicado
 
-1. **Acesso ao servidor**
-   ```bash
-   ssh <USUARIO>@<ENDERECO_DO_SERVIDOR>
-   ```
-2. **Transferir scripts**
-   ```bash
-   scp -r C:\Users\welld\Desktop\GestaoCasa\scripts\ <USUARIO>@<ENDERECO_DO_SERVIDOR>:/home/<USUARIO>/gestaocasa/
-   ```
-3. **Fail2Ban**
-   ```bash
-   sudo cp /home/<USUARIO>/gestaocasa/fail2ban.conf /etc/fail2ban/jail.local
-   sudo apt-get update && sudo apt-get install -y fail2ban
-   sudo systemctl restart fail2ban
-   sudo systemctl status fail2ban
-   ```
-4. **UFW**
-   ```bash
-   chmod +x /home/<USUARIO>/gestaocasa/setup_ufw.sh
-   sudo /home/<USUARIO>/gestaocasa/setup_ufw.sh
-   sudo ufw status verbose
-   ```
-5. **Health‑check**
-   ```bash
-   chmod +x /home/<USUARIO>/gestaocasa/healthcheck.sh
-   /home/<USUARIO>/gestaocasa/healthcheck.sh   # teste manual
-   ```
-   - **systemd timer** (recomendado)
-   ```bash
-   sudo tee /etc/systemd/system/gestaocasa-health.service > /dev/null <<'EOF'
-   [Unit]
-   Description=Health‑check da API GestaoCasa
+### Segurança e Infraestrutura (Item 11) – já aplicado no servidor
+- ✅ Fail2Ban instalado e ativo (`/etc/fail2ban/jail.local`)
+- ✅ UFW configurado (portas 22, 80, 443, 3001, 8091)
+- ✅ Health‑check agendado (systemd timer, 5 em 5 min)
+- ✅ CI/CD pronto (`.github/workflows/ci.yml`)
 
-   [Service]
-   Type=oneshot
-   ExecStart=/home/<USUARIO>/gestaocasa/healthcheck.sh
-   EOF
+### Testes (Item 12) – 24 testes implementados e passando
+- `tests/utils.test.ts` – 12 testes
+- `tests/export.test.ts` – 2 testes
+- `tests/toast.test.tsx` – 3 testes
+- `tests/share-modal.test.tsx` – 7 testes
 
-   sudo tee /etc/systemd/system/gestaocasa-health.timer > /dev/null <<'EOF'
-   [Unit]
-   Description=Timer para health‑check da API GestaoCasa
+### Correções aplicadas
+- **PocketBase URL:** `client.ts` usa `window.location.origin` (Nginx proxy `/api/` → PocketBase)
+- **vite.config.ts:** ajustado para `vitest/config`
+- **Permissões do `dist/`:** corrigidas no servidor (755/644)
+- **Imports:** `pb` adicionado em `Transactions.tsx`, `Button` removido de `TransactionCard.tsx`
 
-   [Timer]
-   OnBootSec=30
-   OnUnitActiveSec=300
-   Persistent=true
+## Como dar manutenção
 
-   [Install]
-   WantedBy=timers.target
-   EOF
+### Rebuild e deploy do frontend
+```bash
+cd frontend
+npm run build                          # compila
+scp -r dist/* servidor:/home/ubuntu/gestaocasa/frontend/dist/   # copia
+ssh servidor "find /home/ubuntu/gestaocasa/frontend/dist -type d -exec chmod 755 {} \; -o -type f -exec chmod 644 {} \;"  # permissões
+```
 
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now gestaocasa-health.timer
-   systemctl list-timers | grep gestaocasa-health
-   ```
-   - **cron** (alternativa)
-   ```bash
-   crontab -e
-   # */5 * * * * /home/<USUARIO>/gestaocasa/healthcheck.sh >> /var/log/gestaocasa-health.log 2>&1
-   ```
-6. **CI/CD** – já está configurado em `.github/workflows/ci.yml`.  Basta fazer push para a branch `main` que o GitHub Actions executa checkout, npm ci, lint, build, testes e escaneia por segredos.
+### Rodar testes
+```bash
+cd frontend
+npm test                               # modo run único
+npm run test:watch                     # modo watch
+```
 
-## Testes (Item 12) – Próximos passos
-- Instalar Vitest (`npm i -D vitest @testing-library/react`).
-- Criar testes:
-  - `frontend/tests/ShareModal.test.tsx` – verifica fetch de usuários, seleção múltipla e PATCH.
-  - `frontend/tests/utils.test.ts` – cobre `formatCurrency` (com moeda) e `compressImage`.
-- Atualizar CI para rodar `npm test --if-present`.
-- Rodar localmente `npm test` e garantir que passe antes de commitar.
-
-## Checklist rápido
-- [ ] Fail2Ban ativo
-- [ ] UFW configurado
-- [ ] Health‑check agendado
-- [ ] CI/CD executando sem erros
-- [ ] Testes Vitest criados e passando
-- [ ] Fluxo de compartilhamento validado com duas contas
+### Fazer novo deploy com Git
+```bash
+git add .
+git commit -m "descrição"
+git push
+```
