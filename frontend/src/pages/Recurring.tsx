@@ -160,14 +160,14 @@ export function Recurring() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-surface-100">Recorrências</h1>
           <p className="text-sm text-surface-400 mt-1">{list.length} recorrência(s) cadastrada(s)</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <Button variant="ghost" size="sm" onClick={fetch} title="Recarregar"><RefreshCw size={16} /></Button>
-          <Button size="sm" onClick={openNew}><Plus size={16} />Nova</Button>
+          <Button size="sm" onClick={openNew}><Plus size={16} /><span className="hidden sm:inline">Nova</span></Button>
         </div>
       </div>
 
@@ -200,7 +200,7 @@ export function Recurring() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-surface-400">
+                <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
                   <span>{getLabel(item.category)}</span>
                   {item.store && <span>{item.store}</span>}
                   <span>Dia {item.day_of_month}{item.frequency === 'yearly' ? `/${item.month}` : ''}</span>
@@ -210,14 +210,14 @@ export function Recurring() {
 
               <div className="shrink-0 text-right flex items-center gap-2">
                 <div>
-                  <p className={`font-semibold ${item.active ? 'text-surface-100' : 'text-surface-500'}`}>
+                  <p className={`text-sm sm:text-base font-semibold ${item.active ? 'text-surface-100' : 'text-surface-500'}`}>
                     {formatCurrency(item.installment_value, item.currency)}
                   </p>
                   {item.payment_type === 'installment' && (
                     <p className="text-xs text-surface-500">Total: {formatCurrency(item.total_amount, item.currency)}</p>
                   )}
                 </div>
-                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => openEdit(item)} className="text-surface-500 hover:text-neon-cyan transition-colors p-1">
                     <Pencil size={14} />
                   </button>
@@ -244,7 +244,7 @@ export function Recurring() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-1">Categoria</label>
               <select
@@ -269,7 +269,7 @@ export function Recurring() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-1">Valor</label>
               <input
@@ -316,7 +316,7 @@ export function Recurring() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-1">Dia do Vencimento</label>
               <input
@@ -374,7 +374,7 @@ export function Recurring() {
           </div>
 
           {isInstallment && (
-            <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-surface-800/50 border border-surface-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-surface-800/50 border border-surface-700">
               <div>
                 <label className="block text-sm font-medium text-surface-300 mb-1">Parcelas</label>
                 <input

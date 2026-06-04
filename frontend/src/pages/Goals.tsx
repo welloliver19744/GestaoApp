@@ -102,12 +102,12 @@ export function Goals() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-surface-100">Metas Financeiras</h1>
           <p className="text-sm text-surface-400">{goals.length} meta(s) ativa(s)</p>
         </div>
-        <Button size="sm" onClick={openNew}><Plus size={16} />Nova Meta</Button>
+        <Button size="sm" onClick={openNew} className="self-end sm:self-auto"><Plus size={16} /><span className="hidden sm:inline">Nova Meta</span></Button>
       </div>
 
       {showForm && (
@@ -165,7 +165,7 @@ export function Goals() {
           </div>
           <div>
             <label className="text-xs text-surface-400 mb-2 block">Cor</label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {COLORS.map(c => (
                 <button
                   key={c}

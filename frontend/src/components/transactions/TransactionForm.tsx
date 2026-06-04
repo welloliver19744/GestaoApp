@@ -204,7 +204,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-medium text-surface-300">Categoria</label>
@@ -258,7 +258,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-1">Data da Compra</label>
             <input
@@ -333,7 +333,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         </div>
 
         {isInstallment && (
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-surface-800/50 border border-surface-700">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-surface-800/50 border border-surface-700">
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-1">Total de Parcelas</label>
               <input

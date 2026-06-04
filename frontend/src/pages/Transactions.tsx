@@ -206,7 +206,7 @@ export function Transactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-surface-100">Transações</h1>
           <button
@@ -226,7 +226,7 @@ export function Transactions() {
           <input ref={monthInputRef} type="month" value={monthStr} onChange={handleMonthPicker} className="hidden" />
           <input ref={dayInputRef} type="date" value={today.toISOString().slice(0, 10)} onChange={handleDayPicker} className="hidden" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button onClick={() => navToMonth(-1)} className="p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800">
             <ChevronLeft size={18} />
           </button>
@@ -236,7 +236,7 @@ export function Transactions() {
           </button>
           <div ref={exportRef} className="relative">
             <Button size="sm" variant="secondary" onClick={() => setExportOpen(!exportOpen)}>
-              <Download size={14} />Exportar
+              <Download size={14} /><span className="hidden sm:inline">Exportar</span>
             </Button>
             {exportOpen && (
               <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-lg bg-surface-800 border border-surface-700 shadow-xl overflow-hidden">
@@ -249,7 +249,7 @@ export function Transactions() {
               </div>
             )}
           </div>
-          <Button size="sm" onClick={openNew}><Plus size={16} />Nova</Button>
+          <Button size="sm" onClick={openNew}><Plus size={16} /><span className="hidden sm:inline">Nova</span></Button>
         </div>
       </div>
 

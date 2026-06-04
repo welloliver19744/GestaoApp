@@ -54,7 +54,7 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
             )}
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-surface-400">
+          <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
             <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
             {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
             <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(tx.due_date)}</span>
@@ -68,14 +68,14 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
 
         <div className="shrink-0 text-right flex items-center gap-2">
           <div>
-            <p className={`font-semibold ${tx.paid ? 'text-surface-500' : 'text-surface-100'}`}>
+            <p className={`text-sm sm:text-base font-semibold ${tx.paid ? 'text-surface-500' : 'text-surface-100'}`}>
               {formatCurrency(tx.installment_value, tx.currency)}
             </p>
             {isInstallment && (
               <p className="text-xs text-surface-500">Total: {formatCurrency(tx.total_amount, tx.currency)}</p>
             )}
           </div>
-          <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-col items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {isOwner && (
               <button onClick={() => setShowShare(true)} className="text-surface-500 hover:text-neon-purple transition-colors p-1" title="Compartilhar">
                 <Share2 size={14} />

@@ -246,7 +246,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-surface-100">Dashboard</h1>
           <button
@@ -278,7 +278,7 @@ export function Dashboard() {
             className="hidden"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button onClick={() => navToMonth(-1)} className="p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800">
             <ChevronLeft size={18} />
           </button>
@@ -288,7 +288,7 @@ export function Dashboard() {
           <button onClick={() => navToMonth(1)} className="p-2 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800">
             <ChevronRight size={18} />
           </button>
-          <Button size="sm" onClick={() => setModalOpen(true)}><Plus size={16} />Nova</Button>
+          <Button size="sm" onClick={() => setModalOpen(true)}><Plus size={16} /><span className="hidden sm:inline">Nova</span></Button>
         </div>
       </div>
 
@@ -509,7 +509,7 @@ export function Dashboard() {
               <Brain size={18} className="text-neon-purple" />
               <h2 className="text-sm font-semibold text-surface-200">IA Insights</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <Button variant="ghost" size="sm" onClick={() => setChatOpen(true)}>
                 <MessageSquare size={14} />Perguntar
               </Button>
