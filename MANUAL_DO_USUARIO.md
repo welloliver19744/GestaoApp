@@ -267,8 +267,9 @@ Configure para usar recursos de IA (scan de contas, auto-categorização, insigh
 #### Push Notifications
 1. Clique em "Ativar" para receber notificações no celular.
 2. O navegador pedirá permissão — aceite.
-3. Você receberá lembretes diários de contas a vencer e vencidas.
-4. Para desativar, clique em "Desativar".
+3. Você receberá lembretes de contas a vencer e vencidas às 08:00 e 18:00.
+4. Quando alguém compartilhar uma transação com você, você receberá uma notificação imediata.
+5. Para desativar, clique em "Desativar".
 
 #### Notificações por E-mail
 Para configurar, o administrador do servidor precisa:

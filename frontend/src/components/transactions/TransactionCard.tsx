@@ -116,16 +116,41 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
         </div>
       </Card>
 
-      <ShareModal
-        open={showShare}
-        onClose={() => setShowShare(false)}
-        currentSharedWith={sharedWith}
-        groupId={tx.group}
-        onSave={async (userIds) => {
-          await transactions.update(tx.id, { shared_with: userIds })
-          setSharedWith(userIds)
-        }}
-      />
+<ShareModal
+  open={showShare}
+  onClose={() => setShowShare(false)}
+  currentSharedWith={sharedWith}
+  groupId={tx.group}
+  onSave={async (userIds) => {
+    await transactions.update(tx.id, { shared_with: userIds })
+    setSharedWith(userIds)
+    
+    // Schedule push notification for newly shared users
+    try {
+      const me = pb.authStore.record?.id
+      if (!me) return
+      
+      const newShared = userIds.filter(id => !sharedWith.includes(id))
+      if (newShared.length === 0) return
+      
+      // Notify each newly shared user
+      for (const userId of newShared) {
+        await fetch(`${import.meta.env.VITE_PB_URL}/api/push/schedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            title: 'Transação compartilhada',
+            body: `Você foi incluído na transação: ${tx.description}`,
+            url: '/transactions'
+          })
+        })
+      }
+    } catch (error) {
+      console.error('Failed to schedule push notification:', error)
+    }
+  }}
+/>
 
       <Modal open={showReceipt} onClose={() => setShowReceipt(false)} title="Comprovante">
         {receiptFullUrl && (

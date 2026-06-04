@@ -26,6 +26,9 @@ async function api(path, headers) {
 async function main() {
   const data = await api('/api/push/check')
 
+  // Also get pending notifications
+  const pendingData = await api('/api/push/pending')
+
   if (!data.subscriptions?.length) {
     console.log('Nenhuma subscription ativa.')
     return
@@ -33,6 +36,7 @@ async function main() {
 
   const messages = []
 
+  // Add scheduled reminders (due tomorrow/overdue)
   if (data.dueTomorrow > 0) {
     messages.push({
       title: 'Contas a vencer amanhã',
@@ -47,6 +51,17 @@ async function main() {
       body: `${data.overdue} conta(s) estão vencidas e não pagas.`,
       url: '/transactions',
     })
+  }
+
+  // Add pending notifications (from shares, etc.)
+  if (pendingData.notifications?.length) {
+    for (const notif of pendingData.notifications) {
+      messages.push({
+        title: notif.title,
+        body: notif.body,
+        url: notif.url || '/transactions',
+      })
+    }
   }
 
   if (!messages.length) {
@@ -75,6 +90,13 @@ async function main() {
   }
 
   console.log(`Notificações enviadas: ${messages.length} tipo(s) para ${data.subscriptions.length} dispositivo(s)`)
+  
+  // Delete processed pending notifications
+  if (pendingData.notifications?.length) {
+    const ids = pendingData.notifications.map(n => n.id).join(',')
+    await api('/api/push/pending/delete', { ids })
+    console.log(`Removidas ${pendingData.notifications.length} notificações pendentes processadas`)
+  }
 }
 
 main().catch(console.error)

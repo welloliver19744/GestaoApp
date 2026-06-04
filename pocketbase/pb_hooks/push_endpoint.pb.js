@@ -63,3 +63,100 @@ routerAdd('POST', '/api/push/delete-subscription', (c) => {
     return c.json(200, { error: String(e) })
   }
 })
+
+routerAdd('POST', '/api/push/schedule', (c) => {
+  try {
+    // Require authentication
+    if (!c.auth.isValid) return c.json(401, { error: 'Unauthorized' })
+    
+    var data = c.body.json()
+    var userId = data.userId
+    var title = data.title || ''
+    var body = data.body || ''
+    var url = data.url || ''
+    
+    if (!userId || !title || !body) {
+      return c.json(400, { error: 'userId, title, and body are required' })
+    }
+    
+    // Validate userId is a string
+    if (typeof userId !== 'string') {
+      return c.json(400, { error: 'userId must be a string' })
+    }
+    
+    // Check if user exists
+    try {
+      var user = c.app.findRecordById('users', userId)
+      if (!user) return c.json(404, { error: 'User not found' })
+    } catch (_) {
+      return c.json(404, { error: 'User not found' })
+    }
+    
+    // Create pending notification record
+    var notification = {
+      user: userId,
+      title: title,
+      body: body,
+      url: url
+    }
+    
+    var record = c.app.collection('pending_notifications').create(notification)
+    
+    return c.json(200, { success: true, id: record.id })
+  } catch (e) {
+    return c.json(500, { error: String(e) })
+  }
+})
+
+routerAdd('GET', '/api/push/pending', (c) => {
+  try {
+    // Require authentication for this endpoint too
+    if (!c.auth.isValid) return c.json(401, { error: 'Unauthorized' })
+    
+    var records = c.app.findRecordsByFilter('pending_notifications', '', '', 0, 100)
+    var notifications = []
+    
+    for (var i = 0; i < records.length; i++) {
+      var rec = records[i]
+      notifications.push({
+        id: rec.id,
+        user: rec.getString('user'),
+        title: rec.getString('title'),
+        body: rec.getString('body'),
+        url: rec.getString('url') || ''
+      })
+    }
+    
+    return c.json(200, { notifications: notifications })
+  } catch (e) {
+    return c.json(500, { error: String(e) })
+  }
+})
+
+routerAdd('POST', '/api/push/pending/delete', (c) => {
+  try {
+    // Require authentication
+    if (!c.auth.isValid) return c.json(401, { error: 'Unauthorized' })
+    
+    var data = c.body.json()
+    var ids = data.ids
+    
+    if (!ids || !Array.isArray(ids)) {
+      return c.json(400, { error: 'ids array is required' })
+    }
+    
+    for (var i = 0; i < ids.length; i++) {
+      try {
+        var id = ids[i]
+        var record = c.app.findRecordById('pending_notifications', id)
+        if (record) c.app.delete(record)
+      } catch (_) {
+        // Record might already be deleted, continue
+      }
+    }
+    
+    return c.json(200, { deleted: ids.length })
+  } catch (e) {
+    return c.json(500, { error: String(e) })
+  }
+})
