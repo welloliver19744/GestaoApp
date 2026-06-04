@@ -1,0 +1,53 @@
+services:
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: gestaocasa-pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pocketbase/pb_data:/pb_data
+      - ./pocketbase/pb_hooks:/pb_hooks
+      - ./pocketbase/pb_migrations:/pb_migrations
+      - ./pocketbase/pb_public:/pb_public
+    environment:
+      TZ: America/Sao_Paulo
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend-dev:
+    image: node:20-alpine
+    container_name: gestaocasa-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    environment:
+      VITE_POCKETBASE_URL: http://localhost:8090
+
+  frontend-prod:
+    image: nginx:alpine
+    container_name: gestaocasa-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    environment:
+      VITE_POCKETBASE_URL: http://pocketbase:8090
+
+volumes:
+  pb_data:

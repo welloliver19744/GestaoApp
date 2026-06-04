@@ -1,0 +1,45 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './hooks/useAuth'
+import { AppLayout } from './components/layout/AppLayout'
+import { UpdateBanner } from './components/ui/UpdateBanner'
+import { Login } from './pages/Login'
+import { ToastProvider } from './components/ui/Toast'
+import { Dashboard } from './pages/Dashboard'
+import { Transactions } from './pages/Transactions'
+import { Recurring } from './pages/Recurring'
+import { Settings } from './pages/Settings'
+import { Goals } from './pages/Goals'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return null
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/recurring" element={<Recurring />} />
+            <Route path="/goals" element={<Goals />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+      <UpdateBanner />
+    </ToastProvider>
+  )
+}
