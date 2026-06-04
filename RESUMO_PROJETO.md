@@ -65,4 +65,12 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 | 20 | **Autocomplete no formulário** | Sugerir estabelecimentos enquanto digita no TransactionForm |
 | 21 | **Rate limiting na API** | Proteger endpoints contra abuso (PocketBase hooks) |
 | 22 | **Notificações por e-mail** | Enviar lembretes por e-mail além do push |
+| 23 | **Auto-categorização IA** | Categorização automática ao digitar descrição (onBlur) |
+| 24 | **PWA Install Prompt** | Banner de instalação via beforeinstallprompt |
+| 25 | **Onboarding** | Tutorial de 6 passos no primeiro acesso |
+| 26 | **Comparativo mensal** | Tabela categoria vs mês anterior no Dashboard |
+| 27 | **Bulk edit** | Seleção múltipla com ações em massa |
+| 28 | **Metas investimento** | goal_type, appreciation %, initial_amount |
+| 29 | **Relatórios anuais** | Página /reports com gráficos e exportação |
+| 30 | **Contas familiares** | (pendente) Orçamento compartilhado real |
 

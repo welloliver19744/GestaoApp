@@ -1,0 +1,126 @@
+# AGENTS.md — Memória do Projeto Gestão Casa
+
+## Stack
+- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS v4, Recharts, Lucide Icons
+- **Backend:** PocketBase v0.39 (SQLite, auto-hosted)
+- **Infra:** Docker (PocketBase + Nginx), GitHub Actions CI/CD
+- **Server:** Ubuntu, UFW, fail2ban, cron, systemd timers
+- **PWA:** vite-plugin-pwa (injectManifest), workbox
+
+## Repositório
+`https://github.com/welloliver19744/GestaoApp.git` (branch `master`)
+
+## Servidor
+- **Host:** 137.131.187.156
+- **User:** ubuntu
+- **SSH Key:** `C:\Users\welld\Downloads\ssh-key-2026-05-26 (1).key`
+- **Project Dir:** `/home/ubuntu/gestaocasa`
+- **Nginx Container:** `gestaocasa-frontend` (port 3001 → 80)
+- **PocketBase Container:** `gestaocasa-pocketbase` (port 8091 → 8090)
+- **Kong:** `supabase-kong` (port 8090)
+
+## Arquitetura de Rede
+```
+Browser → Nginx (3001) → /api/ → Kong (8090) → PocketBase (8091 → 8090)
+                                       → Supabase services
+```
+
+## Comandos Essenciais
+```bash
+# Deploy frontend (local)
+cd frontend && npm run build
+scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
+
+# Backup manual
+ssh ... 'bash /home/ubuntu/gestaocasa/scripts/backup.sh'
+
+# Ver logs push
+ssh ... 'tail -f /home/ubuntu/gestaocasa/scripts/push.log'
+
+# Reload nginx
+ssh ... 'docker exec gestaocasa-frontend nginx -s reload'
+
+# PocketBase superuser
+ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
+# Credentials: welloliver@gmail.com / 53525341
+```
+
+## Cron Ativo
+```
+0 3 * * * backup.sh              # Backup diário
+0 8 * * * send-push.js           # Push notifications
+5 8 * * * send-email-notifications.js  # Email notifications
+```
+
+## PocketBase (v0.39)
+- Admin: `http://137.131.187.156:8091/_/`
+- Collections: transactions, categories, recurring_transactions, goals, push_subscriptions, users
+- Auth: POST `/api/collections/users/auth-with-password`
+- Superuser: POST `/api/collections/_superusers/auth-with-password`
+- Hooks: `pocketbase/pb_hooks/*.pb.js` (reload automático)
+
+## Collections API Fields
+
+### transactions
+- description, category (relation), store, purchase_date, total_amount, payment_type (cash|installment)
+- installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by
+- group_id, notes, receipt (file), currency, original_amount, created_by (relation), shared_with (relation[])
+
+### recurring_transactions
+- description, category, store, total_amount, currency, payment_type, installment_count, installment_value
+- frequency (monthly|yearly), day_of_month, month, active, next_due, notes, owner
+
+### goals
+- name, target_amount, current_amount, deadline, color, icon, owner, goal_type (goal|investment), initial_amount
+
+### push_subscriptions
+- user (relation), subscription (json), enabled
+
+## Features Implementadas (22 itens originais + extras)
+
+### Completos
+1. Backup automático (cron, 14d retention)
+2. OCR + upload comprovantes (compressImage, scanBillWithAI)
+3. Transações recorrentes (cron hook + UI)
+4. Push notifications (VAPID, SW, cron)
+5. Export CSV/PDF
+6. Dashboard avançado (cards, line, donut, budgets, goals)
+7. UX/UI (toasts, skeletons, search, filters)
+8. Metas financeiras (CRUD, progress bars)
+9. Multi-moeda (currency field, formatCurrency)
+10. Compartilhamento (shared_with, ShareModal)
+11. Segurança (fail2ban, UFW, healthcheck, CI/CD)
+12. Testes (24 unit + component tests)
+13. Error handling (console.error + toast em todos .catch)
+14. Tema claro/escuro (useTheme, localStorage, .light CSS class)
+15. Autocomplete lojas (TransactionForm)
+16. Responsividade mobile (headers empilham, grid colapsa, hover → visible on mobile)
+17. Editar recorrências (preserva active/next_due)
+18. Galeria de comprovantes (/receipts, grid month filter)
+19. Suporte offline (StaleWhileRevalidate API cache, OfflineBanner)
+20. Rate limiting (Nginx 10r/s API, 3r/m login, fail2ban nginx-limit-req)
+21. Notificações e-mail (nodemailer, cron, config template)
+
+### Extras pós-plano
+- Auto-categorização AI onBlur
+- PWA install prompt (beforeinstallprompt)
+- Onboarding tutorial (6 steps, localStorage)
+- Comparativo mensal (tabela categoria vs mês anterior no Dashboard)
+- Bulk edit (checkboxes, selecionar todos, pagar/pendente/categoria/excluir)
+- Metas investimento (goal_type, appreciation %)
+- Relatórios anuais (/reports, bar/line charts, top categorias, export)
+
+## Configurações Importantes
+- **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage
+- **Push:** Toggle em Settings, requer service worker + VAPID keys
+- **Email:** Preencher `scripts/email-config.json` no servidor com SMTP
+- **Tema:** localStorage key `gestaocasa-theme`
+- **Onboarding:** localStorage key `gestaocasa-onboarding-done`
+
+## Decisões Técnicas
+- **window.location.origin** como PB_URL runtime (Nginx proxy funciona sempre)
+- **SQLite direto** quando PocketBase v0.39 migration API falha
+- **Relação compartilhada:** `shared_with ?= @request.auth.id` na list rule
+- **Tema claro:** classe `.light` no HTML com paleta invertida (sem mudar componentes)
+- **SW caching:** StaleWhileRevalidate para GET, NetworkOnly para mutations
+- **Rate limit:** Nginx level (não PocketBase) para simplicidade
