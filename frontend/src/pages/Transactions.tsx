@@ -38,7 +38,7 @@ export function Transactions() {
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    categoriesApi.getFullList().then(setCategories).catch(() => {})
+    categoriesApi.getFullList().then(setCategories).catch((e) => { console.error('Erro ao carregar categorias', e); toast('Erro ao carregar categorias', 'error') })
   }, [])
 
   // Collect unique store names for autocomplete

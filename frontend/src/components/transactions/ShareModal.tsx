@@ -22,7 +22,7 @@ export function ShareModal({ open, onClose, currentSharedWith, onSave }: ShareMo
     pb.collection('users').getFullList<User>({ sort: 'email' }).then(all => {
       const me = pb.authStore.record?.id
       setUsers(all.filter(u => u.id !== me))
-    }).catch(() => {})
+    }).catch((e) => { console.error('Erro ao carregar usuários', e) })
     setSelected([...currentSharedWith])
   }, [open, currentSharedWith])
 
