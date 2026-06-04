@@ -45,7 +45,7 @@
 cd frontend
 npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
-ssh ubuntu@137.131.187.156 "chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker exec gestaocasa-frontend nginx -s reload"
+ssh ubuntu@137.131.187.156 "chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker restart gestaocasa-frontend"
 ```
 
 ### Rodar testes
