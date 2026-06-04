@@ -70,16 +70,31 @@ export function Settings() {
     setLoadingModels(true)
     setModelsError('')
     try {
-      const baseUrl = aiConfig.endpoint || DEFAULT_ENDPOINTS[aiConfig.provider]
-      const res = await fetch(`${baseUrl}/models`, {
-        headers: { Authorization: `Bearer ${aiConfig.apiKey}` },
-      })
+      const { provider, apiKey } = aiConfig
+      let url: string
+      let options: RequestInit = { headers: {} }
+
+      if (provider === 'anthropic') {
+        url = 'https://api.anthropic.com/v1/models'
+        options.headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }
+      } else if (provider === 'google') {
+        url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+      } else {
+        const baseUrl = aiConfig.endpoint || DEFAULT_ENDPOINTS[provider]
+        url = `${baseUrl}/models`
+        options.headers = { Authorization: `Bearer ${apiKey}` }
+      }
+
+      const res = await fetch(url, options)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      const list: string[] = (data.data || data.models || [])
-        .map((m: any) => m.id)
-        .filter(Boolean)
-        .sort()
+      let list: string[] = []
+      if (data.data) {
+        list = data.data.map((m: any) => m.id)
+      } else if (data.models) {
+        list = data.models.map((m: any) => m.id || m.name)
+      }
+      list = list.filter(Boolean).sort()
       if (list.length === 0) throw new Error('Nenhum modelo encontrado')
       setModels(list)
     } catch (e: any) {
