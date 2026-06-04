@@ -150,7 +150,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Bottom nav mobile com scroll horizontal:** Todos os 8 itens de navegação visíveis no celular sem sobreposição, com scroll horizontal e barra de rolagem oculta.
 - **Tags/labels nas transações:** 11 tags predefinidas (essencial, moradia, alimentação, etc) com cores. Seletor no TransactionForm, badges no TransactionCard, filtro na página Transactions. Schema: campo `tags` (JSON) na collection transactions via SQLite direto.
 - **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
-- **Escaneamento inteligente de cupons:** Detecção automática de múltiplos itens em notas fiscais (supermercado, farmácia etc.) com opção para dividir em transações separadas por categoria.
+- **Escaneamento de contas/cupons via IA:** Leitura e processamento de documentos (faturas, contas e recibos) via IA para extração do valor total, estabelecimento, data e categoria, sem separação de itens individuais.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)

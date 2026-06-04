@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useCategories } from '../../hooks/useCategories'
 import { useGroups } from '../../hooks/useGroups'
-import { scanBillWithAI, autoCategorize, getAIConfig, scanReceiptWithAI } from '../../lib/ai'
+import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
 import { scanBarcode, lookupBarcode } from '../../lib/barcode'
 import { pb, transactions as transactionsApi } from '../../api/client'
@@ -56,6 +56,8 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const { data: categories } = useCategories()
   const { data: userGroups } = useGroups()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const aiConfig = getAIConfig()
+
   const [form, setForm] = useState<FormData>(() => {
     if (!initial) return emptyForm()
     return {
@@ -76,9 +78,9 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   })
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
-  [barcoding, setBarcoding] = useState(false)
-  [categorizing, setCategorizing] = useState(false)
-  [receiptPreview, setReceiptPreview] = useState<string | null>(
+  const [barcoding, setBarcoding] = useState(false)
+  const [categorizing, setCategorizing] = useState(false)
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(
     initial?.receipt ? pb.files.getUrl(initial, initial.receipt, { thumb: '640x480' }) : null,
   )
   const [stores, setStores] = useState<string[]>([])
@@ -107,13 +109,6 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   }
 
   useEffect(() => {
-    transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {
-      const unique = [...new Set(r.map((tx: any) => tx.store).filter(Boolean))] as string[]
-      setStores(unique)
-    }).catch(() => {})
-  }, [])
-
-  useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (storeRef.current && !storeRef.current.contains(e.target as Node)) setShowStoreSuggestions(false)
     }
@@ -125,38 +120,25 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
-    const handleScan = async (file: File) => {
+  const handleScan = async (file: File) => {
     setScanning(true)
     try {
       const compressed = await compressImage(file, 1200, 0.7)
-      const receiptResult = await scanReceiptWithAI(compressed.base64)
-      
-      // Use the first detected item from the receipt (or fallback to single transaction approach)
-      const firstItem = receiptResult.items?.[0] || {
-        description: 'Compra',
-        amount: 0,
-        suggestedCategory: 'Outros'
-      }
-      
-      // For backward compatibility with single transaction approach, we still use total_amount
-      // but now we have better item detection for the first item
-      const amountToUse = firstItem.amount > 0 ? firstItem.amount : receiptResult.total_amount
-      const descriptionToUse = firstItem.description || (receiptResult.total_amount > 0 ? 'Compra via IA' : '')
-      const suggestedCategory = firstItem.suggestedCategory || 'Outros'
+      const result = await scanBillWithAI(compressed.base64)
       
       const matchedCat = categories.find(c =>
-        c.name.toLowerCase().trim() === suggestedCategory.toLowerCase().trim()
-      )?.id || suggestedCategory || 'Outros'
+        c.name.toLowerCase().trim() === result.category.toLowerCase().trim()
+      )?.id || ''
       
       setForm(prev => ({
         ...prev,
-        description: descriptionToUse || prev.description,
-        store: receiptResult.store || prev.store,
-        purchase_date: new Date().toISOString().slice(0, 10), // Use today's date for receipts
-        total_amount: amountToUse || prev.total_amount,
-        category: matchedCat,
+        description: result.description || prev.description,
+        store: result.store || prev.store,
+        purchase_date: result.due_date || new Date().toISOString().slice(0, 10),
+        total_amount: result.amount || prev.total_amount,
+        category: matchedCat || prev.category,
         receiptFile: compressed.file,
-        notes: `Importado de cupom via IA: ${file.name}`,
+        notes: `Importado via IA: ${file.name}`,
       }))
       setReceiptPreview(URL.createObjectURL(compressed.file))
     } catch (e) {
@@ -165,8 +147,6 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       setScanning(false)
     }
   }
-
-
 
   const handleBarcodeScan = async () => {
     setBarcoding(true)
@@ -225,9 +205,8 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     }
   }
 
-  const aiConfig = getAIConfig()
-
   const isInstallment = form.payment_type === 'installment'
+
 
   return (
     <Modal open={open} onClose={onClose} title={initial ? 'Editar Transação' : 'Nova Transação'}>
@@ -283,39 +262,6 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
              </div>
            )}
            
-           {itemScanning && scannedItems.length > 0 && (
-             <div className="mb-4">
-               <h3 className="text-lg font-semibold mb-2">Itens detectados no cupom:</h3>
-               <div className="space-y-2">
-                 {scannedItems.map((item, index) => (
-                   <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-surface-700 bg-surface-800">
-                     <input
-                       type="checkbox"
-                       checked={selectedItems.some(si => si.description === item.description && si.amount === item.amount)}
-                       onChange={() => toggleItemSelection(index)}
-                       className="h-4 w-4 text-neon-cyan"
-                     />
-                     <div className="flex-1">
-                       <div className="flex justify-between">
-                         <span className="font-medium">{item.description}</span>
-                         <span className="text-xs text-surface-500">R$ {item.amount.toFixed(2)}</span>
-                       </div>
-                       <span className="text-xs text-surface-400">{item.suggestedCategory}</span>
-                     </div>
-                   }
-                 ))}
-               </div>
-               <div className="flex justify-end mt-3">
-                 <Button 
-                   onClick={createTransactionFromSelectedItems}
-                   disabled={selectedItems.length === 0}
-                   className="px-4 py-2"
-                 >
-                   {selectedItems.length > 0 ? `Criar transação (${selectedItems.length} item)` : 'Selecione itens'}
-                 </Button>
-               </div>
-             </div>
-           )}
           <input
             value={form.description}
             onChange={e => set('description', e.target.value)}
