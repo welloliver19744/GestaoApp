@@ -111,7 +111,7 @@ ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
 - Relatórios anuais (/reports, bar/line charts, top categorias, export)
 
 ## Configurações Importantes
-- **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage
+- **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage. Provedores: OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom
 - **Push:** Toggle em Settings, requer service worker + VAPID keys
 - **Email:** Preencher `scripts/email-config.json` no servidor com SMTP
 - **Tema:** localStorage key `gestaocasa-theme`

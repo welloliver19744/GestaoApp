@@ -200,12 +200,19 @@ Configure para usar recursos de IA (scan de contas, auto-categorização, insigh
 4. **API Key:** Sua chave de API (fica salva apenas no seu navegador, nunca é enviada ao servidor).
 
 **Provedores suportados:**
-| Provedor | Modelo padrão | Preço |
-|----------|---------------|-------|
-| OpenAI | gpt-4o-mini | ~$0.15/1M tokens |
-| Anthropic | claude-3-haiku | ~$0.25/1M tokens |
-| Ollama | llama3.2-vision | Gratuito (local) |
-| Custom | Qualquer | Variável |
+| Provedor | Modelo padrão | Endpoint | Preço aproximado |
+|----------|---------------|----------|-----------------|
+| OpenAI | gpt-4o-mini | api.openai.com | ~$0.15/1M tokens |
+| Anthropic | claude-3-haiku | api.anthropic.com | ~$0.25/1M tokens |
+| OpenRouter | openai/gpt-4o-mini | openrouter.ai | Vários modelos/providers |
+| Groq | llama3-70b-8192 | api.groq.com | Grátis (rate limit) |
+| DeepSeek | deepseek-chat | api.deepseek.com | ~$0.14/1M tokens |
+| Together AI | Mixtral-8x7B | api.together.xyz | ~$0.30/1M tokens |
+| Perplexity | sonar-pro | api.perplexity.ai | ~$0.20/1M tokens |
+| NVIDIA NIM | llama3-70b-instruct | nvidia.com | Grátis (rate limit) |
+| Mistral AI | mistral-small | api.mistral.ai | ~$0.20/1M tokens |
+| Google Gemini | gemini-1.5-flash | googleapis.com | Grátis (60 req/min) |
+| Ollama | llama3.2-vision | localhost:11434 | Grátis (local) |
 
 ### Notificações
 #### Push Notifications

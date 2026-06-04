@@ -49,6 +49,7 @@ export default function App() {
           <PwaInstallPrompt />
           <Onboarding />
           <UpdateBanner />
+        </BrowserRouter>
     </ToastProvider>
   )
 }

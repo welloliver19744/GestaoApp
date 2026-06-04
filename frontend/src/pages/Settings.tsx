@@ -9,10 +9,18 @@ import { useTheme } from '../hooks/useTheme'
 import { Mail } from 'lucide-react'
 
 const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic (Claude)' },
-  { value: 'ollama', label: 'Ollama (local)' },
-  { value: 'custom', label: 'Custom (OpenAI-compatível)' },
+  { value: 'openai', label: 'OpenAI', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { value: 'anthropic', label: 'Anthropic (Claude)', endpoint: 'https://api.anthropic.com/v1', model: 'claude-3-haiku-20240307' },
+  { value: 'openrouter', label: 'OpenRouter (vários modelos)', endpoint: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o-mini' },
+  { value: 'groq', label: 'Groq (rápido)', endpoint: 'https://api.groq.com/openai/v1', model: 'llama3-70b-8192' },
+  { value: 'deepseek', label: 'DeepSeek (barato)', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { value: 'together', label: 'Together AI', endpoint: 'https://api.together.xyz/v1', model: 'mistralai/Mixtral-8x7B-Instruct-v0.1' },
+  { value: 'perplexity', label: 'Perplexity', endpoint: 'https://api.perplexity.ai', model: 'sonar-pro' },
+  { value: 'nvidia', label: 'NVIDIA NIM', endpoint: 'https://integrate.api.nvidia.com/v1', model: 'meta/llama3-70b-instruct' },
+  { value: 'mistral', label: 'Mistral AI', endpoint: 'https://api.mistral.ai/v1', model: 'mistral-small-latest' },
+  { value: 'google', label: 'Google Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-1.5-flash' },
+  { value: 'ollama', label: 'Ollama (local)', endpoint: 'http://localhost:11434/v1', model: 'llama3.2-vision' },
+  { value: 'custom', label: 'Custom (OpenAI-compatível)', endpoint: '', model: '' },
 ]
 
 export function Settings() {
@@ -103,32 +111,28 @@ export function Settings() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-1.5">Provedor</label>
-            <select
-              value={aiConfig.provider}
-              onChange={e => {
-                const provider = e.target.value
-                updateAI('provider', provider)
-                if (provider !== 'custom') {
-                  const endpoints: Record<string, string> = {
-                    openai: 'https://api.openai.com/v1',
-                    anthropic: 'https://api.anthropic.com/v1',
-                    ollama: 'http://localhost:11434/v1',
+              <select
+                value={aiConfig.provider}
+                onChange={e => {
+                  const provider = e.target.value
+                  const p = PROVIDERS.find(p => p.value === provider)
+                  if (p && provider !== 'custom') {
+                    updateAI('provider', provider)
+                    updateAI('endpoint', p.endpoint)
+                    updateAI('model', p.model)
+                  } else {
+                    updateAI('provider', provider)
                   }
-                  updateAI('endpoint', endpoints[provider] || '')
-                  const models: Record<string, string> = {
-                    openai: 'gpt-4o-mini',
-                    anthropic: 'claude-3-haiku-20240307',
-                    ollama: 'llama3.2-vision',
-                  }
-                  updateAI('model', models[provider] || '')
-                }
-              }}
-              className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
-            >
-              {PROVIDERS.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
+                }}
+                className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+              >
+                {PROVIDERS.map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+              {aiConfig.provider !== 'custom' && (
+                <p className="text-xs text-surface-500 mt-1">Endpoint: {aiConfig.endpoint}</p>
+              )}
           </div>
           {aiConfig.provider === 'custom' && (
             <div>

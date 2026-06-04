@@ -9,8 +9,16 @@ const STORAGE_KEY = 'gestaocasa_ai_config'
 
 const DEFAULT_ENDPOINTS: Record<string, string> = {
   openai: 'https://api.openai.com/v1',
-  ollama: 'http://localhost:11434/v1',
   anthropic: 'https://api.anthropic.com/v1',
+  ollama: 'http://localhost:11434/v1',
+  openrouter: 'https://openrouter.ai/api/v1',
+  groq: 'https://api.groq.com/openai/v1',
+  deepseek: 'https://api.deepseek.com/v1',
+  together: 'https://api.together.xyz/v1',
+  perplexity: 'https://api.perplexity.ai',
+  nvidia: 'https://integrate.api.nvidia.com/v1',
+  mistral: 'https://api.mistral.ai/v1',
+  google: 'https://generativelanguage.googleapis.com/v1beta/openai',
 }
 
 export function getAIConfig(): AIConfig {
@@ -35,14 +43,20 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
   const endpoint = getAIEndpoint(config.provider, config.endpoint)
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (config.provider === 'openai' || config.provider === 'ollama') {
+  const openaiCompat = ['openai', 'ollama', 'openrouter', 'groq', 'deepseek', 'together', 'perplexity', 'nvidia', 'mistral']
+  if (openaiCompat.includes(config.provider)) {
     headers['Authorization'] = `Bearer ${config.apiKey}`
   } else if (config.provider === 'anthropic') {
     headers['x-api-key'] = config.apiKey
     headers['anthropic-version'] = '2023-06-01'
   }
 
-  const res = await fetch(`${endpoint}/chat/completions`, {
+  let url = `${endpoint}/chat/completions`
+  if (config.provider === 'google') {
+    url += `?key=${config.apiKey}`
+  }
+
+  const res = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify({ model: config.model, messages, max_tokens: maxTokens, temperature }),
