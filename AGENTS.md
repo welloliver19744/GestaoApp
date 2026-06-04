@@ -126,7 +126,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Auto-fetch modelos AI ao trocar provedor, salvar chave e carregar página
 - Notificações Discord (webhook, Settings UI, test button, cron 08:08)
 - Scanner código de barras (BarcodeDetector API + Open Food Facts)
-- Bottom nav mobile reduzido (4 itens: Dashboard, Transações, Recorrências, Configurar)
+- Bottom nav mobile com scroll horizontal (todos os 8 itens, sem sobreposição)
 
 ## Configurações Importantes
 - **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage. Provedores: OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom. Botão "Buscar modelos" popula o select com modelos da API.
@@ -146,6 +146,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 
 ## Implementado Recentemente
 - **Scanner de código de barras:** Botão "Código" no TransactionForm. Usa `BarcodeDetector` API (Chrome/Edge, Android). Abre a câmera, detecta código de barras e busca dados do produto na Open Food Facts (grátis, sem chave). Preenche descrição, marca e preço automaticamente. Fallback: mostra o código como descrição. Não funciona no iPhone Safari.
+- **Bottom nav mobile com scroll horizontal:** Todos os 8 itens de navegação visíveis no celular sem sobreposição, com scroll horizontal e barra de rolagem oculta.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
