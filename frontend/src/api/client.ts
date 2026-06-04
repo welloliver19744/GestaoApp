@@ -1,9 +1,15 @@
 import PocketBase from 'pocketbase'
 import type { Transaction, Category, RecurringTransaction } from './types'
 
-const PB_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090'
+function getBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_POCKETBASE_URL
+  if (envUrl) return envUrl
+  // Em produção, usa a mesma origem do frontend (Nginx proxy /api/)
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return origin || 'http://localhost:8090'
+}
 
-export const pb = new PocketBase(PB_URL)
+export const pb = new PocketBase(getBaseUrl())
 
 pb.autoCancellation(false)
 
