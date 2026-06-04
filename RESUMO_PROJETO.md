@@ -52,4 +52,17 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 
 ---
 
-Qualquer dúvida ou ajuste, é só avisar!
+## Próximas evoluções previstas
+
+| # | Item | Descrição |
+|---|------|-----------|
+| 14 | **Tratamento de erros** | Substituir `.catch(() => {})` por feedback visual ao usuário (toast de erro) |
+| 15 | **Modo claro/escuro** | Toggle no Settings para alternar entre tema light e dark |
+| 16 | **Suporte offline** | Cache de páginas e dados para funcionar sem internet (Service Worker + IndexedDB) |
+| 17 | **Responsividade mobile** | Ajustar telas e componentes para dispositivos menores |
+| 18 | **Editar recorrências** | UI para editar/excluir transações recorrentes (não só as geradas) |
+| 19 | **Galeria de comprovantes** | Página dedicada para ver todos os comprovantes anexados |
+| 20 | **Autocomplete no formulário** | Sugerir estabelecimentos enquanto digita no TransactionForm |
+| 21 | **Rate limiting na API** | Proteger endpoints contra abuso (PocketBase hooks) |
+| 22 | **Notificações por e-mail** | Enviar lembretes por e-mail além do push |
+

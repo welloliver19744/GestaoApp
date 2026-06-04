@@ -43,3 +43,14 @@ git add .
 git commit -m "descrição"
 git push
 ```
+
+## Próximas evoluções (ordem sugerida)
+1. **Tratamento de erros** – substituir `.catch(() => {})` por toasts de erro
+2. **Modo claro/escuro** – toggle no Settings
+3. **Autocomplete no formulário** – sugerir estabelecimentos no TransactionForm
+4. **Responsividade mobile** – ajustar telas para dispositivos menores
+5. **Suporte offline** – cache via Service Worker + IndexedDB
+6. **Editar recorrências** – UI para gerenciar transações recorrentes
+7. **Galeria de comprovantes** – página dedicada para ver recibos
+8. **Rate limiting** – proteger API contra abuso
+9. **Notificações por e-mail** – lembretes por e-mail
