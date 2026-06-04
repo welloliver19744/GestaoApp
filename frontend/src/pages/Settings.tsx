@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { pb } from '../api/client'
-import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2 } from 'lucide-react'
+import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon } from 'lucide-react'
 import { getAIConfig, saveAIConfig, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { useTheme } from '../hooks/useTheme'
 
 const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
@@ -52,6 +53,7 @@ export function Settings() {
   const selectedProvider = PROVIDERS.find(p => p.value === aiConfig.provider)
 
   const push = usePushNotifications()
+  const { theme, toggle } = useTheme()
 
   const handleTogglePush = async () => {
     if (push.subscribed) {
@@ -225,6 +227,31 @@ export function Settings() {
               Notificações push não são suportadas neste navegador.
             </p>
           )}
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-sm font-semibold text-surface-200 mb-4">Aparência</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-surface-200">Tema {theme === 'dark' ? 'escuro' : 'claro'}</p>
+            <p className="text-xs text-surface-500">Alternar entre modo escuro e claro</p>
+          </div>
+          <button
+            onClick={toggle}
+            className={`relative w-14 h-7 rounded-full transition-colors ${
+              theme === 'dark' ? 'bg-surface-700' : 'bg-neon-cyan'
+            }`}
+            aria-label="Alternar tema"
+          >
+            <span
+              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center transition-transform ${
+                theme === 'dark' ? 'translate-x-0.5' : 'translate-x-7.5'
+              }`}
+            >
+              {theme === 'dark' ? <Moon size={12} className="text-surface-700" /> : <Sun size={12} className="text-amber-500" />}
+            </span>
+          </button>
         </div>
       </Card>
 

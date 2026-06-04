@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { useTheme } from './hooks/useTheme'
 import { AppLayout } from './components/layout/AppLayout'
 import { UpdateBanner } from './components/ui/UpdateBanner'
 import { Login } from './pages/Login'
@@ -18,6 +19,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useTheme()
   return (
     <ToastProvider>
       <BrowserRouter>
