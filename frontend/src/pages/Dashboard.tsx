@@ -16,7 +16,8 @@ import { formatCurrency, formatMonthYear } from '../lib/utils'
 import { generateInsights, getAIConfig } from '../lib/ai'
 import type { Transaction } from '../api/types'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { TrendingUp, Wallet, Plus, ChevronLeft, ChevronRight, X, Brain, MessageSquare, Loader2, Sparkles, BarChart3, Target, TrendingDown } from 'lucide-react'
+import { TrendingUp, Wallet, Plus, ChevronLeft, ChevronRight, X, Brain, MessageSquare, Loader2, Sparkles, BarChart3, Target, TrendingDown, Plane, Store, ChevronDown } from 'lucide-react'
+import { parseTags } from '../lib/tags'
 
 function formatDateBR(dateStr: string) {
   const [y, m, d] = dateStr.split('-')
@@ -39,6 +40,15 @@ export function Dashboard() {
 
   const [searchParams] = useSearchParams()
   const activeGroup = searchParams.get('group') || ''
+
+  const travelConfig = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('gestaocasa_travel_config')
+      return raw ? JSON.parse(raw) : { active: false, name: '', startDate: '', endDate: '' }
+    } catch { return { active: false, name: '', startDate: '', endDate: '' } }
+  }, [])
+
+  const [travelExpanded, setTravelExpanded] = useState(false)
 
   const monthInputRef = useRef<HTMLInputElement>(null)
   const dayInputRef = useRef<HTMLInputElement>(null)
@@ -67,18 +77,37 @@ export function Dashboard() {
     return list
   }, [transactions, monthStr, selectedDay, activeGroup])
 
-  const unpaid = filtered.filter(tx => !tx.paid)
+  const isTravelTx = (tx: Transaction): boolean => {
+    const tags = parseTags((tx as any).tags)
+    if (tags.includes('viagem')) return true
+    if (travelConfig.active && travelConfig.startDate && travelConfig.endDate && tx.due_date) {
+      return tx.due_date >= travelConfig.startDate && tx.due_date <= travelConfig.endDate
+    }
+    return false
+  }
+
+  const travelTxs = useMemo(() => {
+    if (!travelConfig.active) return []
+    return filtered.filter(isTravelTx)
+  }, [filtered, travelConfig])
+
+  const regularFiltered = useMemo(() => {
+    if (!travelConfig.active) return filtered
+    return filtered.filter(tx => !isTravelTx(tx))
+  }, [filtered, travelConfig])
+
+  const unpaid = regularFiltered.filter(tx => !tx.paid)
   const totalPending = unpaid.reduce((acc, tx) => acc + tx.installment_value, 0)
-  const totalPaid = filtered.filter(tx => tx.paid).reduce((acc, tx) => acc + tx.installment_value, 0)
+  const totalPaid = regularFiltered.filter(tx => tx.paid).reduce((acc, tx) => acc + tx.installment_value, 0)
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>()
-    for (const tx of filtered) {
+    for (const tx of regularFiltered) {
       const label = getLabel(tx.category)
       map.set(label, (map.get(label) || 0) + tx.installment_value)
     }
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1])
-  }, [filtered, getLabel])
+  }, [regularFiltered, getLabel])
 
   const previousMonthStr = useMemo(() => {
     const d = new Date(today.getFullYear(), today.getMonth() + monthOffset - 1, 1)
@@ -112,7 +141,7 @@ export function Dashboard() {
     return categories
       .filter(c => c.budget_monthly && c.budget_monthly > 0)
       .map(c => {
-        const spent = filtered
+        const spent = regularFiltered
           .filter(tx => tx.category === c.id)
           .reduce((s, tx) => s + tx.installment_value, 0)
         return {
@@ -124,7 +153,7 @@ export function Dashboard() {
         }
       })
       .sort((a, b) => b.pct - a.pct)
-  }, [categories, filtered])
+  }, [categories, regularFiltered])
 
   const monthlyEvolution = useMemo(() => {
     const months: { name: string; total: number; paid: number }[] = []
@@ -143,16 +172,16 @@ export function Dashboard() {
 
   const monthComparison = useMemo(() => {
     if (prevMonthTotal === 0) return null
-    const currentTotal = filtered.reduce((a, tx) => a + tx.installment_value, 0)
+    const currentTotal = regularFiltered.reduce((a, tx) => a + tx.installment_value, 0)
     const diff = currentTotal - prevMonthTotal
     const pct = (diff / prevMonthTotal) * 100
     return { currentTotal, prevMonthTotal, diff, pct }
-  }, [filtered, prevMonthTotal])
+  }, [regularFiltered, prevMonthTotal])
 
   const anomalies = useMemo(() => {
     const result: { description: string; value: number; category: string; avg: number }[] = []
     const catTotals = new Map<string, { current: number; months: number[] }>()
-    for (const tx of filtered) {
+    for (const tx of regularFiltered) {
       const cat = tx.category
       if (!catTotals.has(cat)) catTotals.set(cat, { current: 0, months: [] })
       catTotals.get(cat)!.current += tx.installment_value
@@ -182,14 +211,30 @@ export function Dashboard() {
       }
     }
     return result
-  }, [transactions, filtered, monthOffset, getLabel])
+  }, [transactions, regularFiltered, monthOffset, getLabel])
+
+  const storeStats = useMemo(() => {
+    const map = new Map<string, { total: number; count: number }>()
+    for (const tx of regularFiltered) {
+      const store = (tx.store || '').trim()
+      if (!store) continue
+      const entry = map.get(store) || { total: 0, count: 0 }
+      entry.total += tx.installment_value
+      entry.count++
+      map.set(store, entry)
+    }
+    return Array.from(map.entries())
+      .map(([name, d]) => ({ name, total: d.total, count: d.count, avg: d.total / d.count }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5)
+  }, [regularFiltered])
 
   const handleGenerateInsights = async () => {
     setLoadingInsights(true)
     try {
       const prevMonth = monthOffset > 0 ? { name: formatMonthYear(new Date(today.getFullYear(), today.getMonth() + monthOffset - 1, 1)), total: prevMonthTotal } : null
       const result = await generateInsights(
-        { name: formatMonthYear(currentMonth), total: filtered.reduce((a, t) => a + t.installment_value, 0), byCategory: byCategory.map(([name, value]) => ({ name, value })) },
+        { name: formatMonthYear(currentMonth), total: regularFiltered.reduce((a, t) => a + t.installment_value, 0), byCategory: byCategory.map(([name, value]) => ({ name, value })) },
         prevMonth,
         last6MonthsAvg,
         anomalies,
@@ -488,6 +533,93 @@ export function Dashboard() {
         </Card>
       )}
 
+      {/* Travel Mode Widget */}
+      {travelConfig.active && travelTxs.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                <Plane size={18} className="text-sky-400" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-surface-200">
+                  {travelConfig.name || 'Viagem'}
+                </h2>
+                <p className="text-xs text-surface-500">
+                  {travelConfig.startDate && travelConfig.endDate
+                    ? `${formatDateBR(travelConfig.startDate)} — ${formatDateBR(travelConfig.endDate)}`
+                    : 'Período não definido'}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-sky-400">{formatCurrency(travelTxs.reduce((a, t) => a + t.installment_value, 0))}</p>
+              <p className="text-xs text-surface-500">{travelTxs.length} transaç{travelTxs.length === 1 ? 'ão' : 'ões'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setTravelExpanded(!travelExpanded)}
+            className="flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors w-full justify-center py-1"
+          >
+            <ChevronDown size={14} className={`transition-transform ${travelExpanded ? 'rotate-180' : ''}`} />
+            {travelExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+          </button>
+          {travelExpanded && (
+            <div className="mt-3 space-y-2 pt-3 border-t border-surface-800">
+              {travelTxs.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between text-sm py-1.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-surface-200 truncate">{tx.description}</p>
+                    <p className="text-xs text-surface-500">{tx.store ? `${tx.store} · ` : ''}{formatDateBR(tx.due_date)}</p>
+                  </div>
+                  <span className="text-surface-100 font-medium ml-3 shrink-0">{formatCurrency(tx.installment_value)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Store Comparison Widget */}
+      {storeStats.length > 0 && (
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <Store size={16} className="text-neon-amber" />
+            <h2 className="text-sm font-semibold text-surface-300 uppercase tracking-wider">Comparativo de Lojas</h2>
+          </div>
+          <div className="space-y-3">
+            {storeStats.map((s, idx) => {
+              const maxTotal = storeStats[0]?.total || 1
+              const barPct = (s.total / maxTotal) * 100
+              return (
+                <div key={s.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-surface-500 w-5">{idx + 1}.</span>
+                      <span className="text-sm text-surface-200 truncate">{s.name}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-surface-100">{formatCurrency(s.total)}</span>
+                  </div>
+                  <div className="h-2 bg-surface-800 rounded-full overflow-hidden ml-7">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${barPct}%`,
+                        background: `linear-gradient(90deg, ${idx === 0 ? '#f59e0b' : idx === 1 ? '#fb923c' : '#fbbf24'}80, ${idx === 0 ? '#f59e0b' : idx === 1 ? '#fb923c' : '#fbbf24'})`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-4 ml-7 mt-1">
+                    <span className="text-[10px] text-surface-500">Ticket médio: {formatCurrency(s.avg)}</span>
+                    <span className="text-[10px] text-surface-500">{s.count} visita{s.count === 1 ? '' : 's'}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2">
           <h2 className="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Próximos Vencimentos</h2>
@@ -625,7 +757,7 @@ export function Dashboard() {
         open={chatOpen}
         onClose={() => setChatOpen(false)}
         context={{
-          totalMonth: filtered.reduce((a, t) => a + t.installment_value, 0),
+        totalMonth: regularFiltered.reduce((a, t) => a + t.installment_value, 0),
           byCategory: byCategory.map(([name, value]) => ({ name, value })),
           recentTransactions: unpaid.slice(0, 10).map(tx => `${tx.description} - ${formatCurrency(tx.installment_value)} (${tx.due_date})`),
         }}

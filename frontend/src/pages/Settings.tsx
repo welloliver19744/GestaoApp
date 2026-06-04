@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { pb } from '../api/client'
-import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon, MessageCircle } from 'lucide-react'
+import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon, MessageCircle, Plane } from 'lucide-react'
 import { getAIConfig, saveAIConfig, DEFAULT_ENDPOINTS, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useTheme } from '../hooks/useTheme'
@@ -30,6 +30,24 @@ export function Settings() {
   const [saved, setSaved] = useState(false)
   const [discordWebhook, setDiscordWebhook] = useState(() => localStorage.getItem('gestaocasa_discord_webhook') || '')
   const [discordSaved, setDiscordSaved] = useState(false)
+
+  const [travelConfig, setTravelConfig] = useState(() => {
+    try {
+      const raw = localStorage.getItem('gestaocasa_travel_config')
+      return raw ? JSON.parse(raw) : { active: false, name: '', startDate: '', endDate: '' }
+    } catch { return { active: false, name: '', startDate: '', endDate: '' } }
+  })
+  const [travelSaved, setTravelSaved] = useState(false)
+
+  const handleSaveTravel = () => {
+    localStorage.setItem('gestaocasa_travel_config', JSON.stringify(travelConfig))
+    setTravelSaved(true)
+    setTimeout(() => setTravelSaved(false), 2000)
+  }
+
+  const updateTravel = <K extends keyof typeof travelConfig>(key: K, value: (typeof travelConfig)[K]) => {
+    setTravelConfig((prev: typeof travelConfig) => ({ ...prev, [key]: value }))
+  }
 
   const [aiConfig, setAiConfig] = useState<AIConfig>(getAIConfig)
   const [showKey, setShowKey] = useState(false)
@@ -404,6 +422,79 @@ export function Settings() {
             Crie um webhook no Discord: Configurações do canal → Integrações → Webhooks → Copiar URL.
             As notificações de contas a vencer serão enviadas automaticamente às 08:00.
           </p>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <Plane size={18} className="text-sky-400" />
+          <h2 className="text-sm font-semibold text-surface-200">Modo Viagem</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-surface-200">Ativar modo viagem</p>
+              <p className="text-xs text-surface-500">
+                {travelConfig.active
+                  ? 'Despesas de viagem serão isoladas do Dashboard'
+                  : 'Ative para separar os gastos da viagem'}
+              </p>
+            </div>
+            <button
+              onClick={() => updateTravel('active', !travelConfig.active)}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                travelConfig.active ? 'bg-sky-500' : 'bg-surface-700'
+              }`}
+              aria-label="Alternar modo viagem"
+            >
+              <span
+                className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center transition-transform ${
+                  travelConfig.active ? 'translate-x-7.5' : 'translate-x-0.5'
+                }`}
+              >
+                <Plane size={12} className={travelConfig.active ? 'text-sky-500' : 'text-surface-500'} />
+              </span>
+            </button>
+          </div>
+          {travelConfig.active && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-surface-300 mb-1.5">Nome da viagem</label>
+                <input
+                  value={travelConfig.name}
+                  onChange={e => updateTravel('name', e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-sky-400/50 text-sm"
+                  placeholder="Ex: Férias no litoral"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1.5">Data início</label>
+                  <input
+                    type="date"
+                    value={travelConfig.startDate}
+                    onChange={e => updateTravel('startDate', e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-sky-400/50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1.5">Data fim</label>
+                  <input
+                    type="date"
+                    value={travelConfig.endDate}
+                    onChange={e => updateTravel('endDate', e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-sky-400/50 text-sm"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleSaveTravel}>
+                <Save size={16} />{travelSaved ? 'Salvo ✓' : 'Salvar Viagem'}
+              </Button>
+              <p className="text-xs text-surface-500">
+                Transações com a tag "Viagem" ou dentro do período configurado serão separadas do Dashboard principal e exibidas em um widget exclusivo.
+              </p>
+            </>
+          )}
         </div>
       </Card>
 

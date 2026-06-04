@@ -16,6 +16,7 @@ export const PREDEFINED_TAGS: TagDef[] = [
   { value: 'assinaturas', label: 'Assinaturas', color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
   { value: 'imprevisto', label: 'Imprevisto', color: 'text-purple-400', bg: 'bg-purple-400/10' },
   { value: 'investimento', label: 'Investimento', color: 'text-pink-400', bg: 'bg-pink-400/10' },
+  { value: 'viagem', label: 'Viagem', color: 'text-sky-400', bg: 'bg-sky-400/10' },
   { value: 'outros', label: 'Outros', color: 'text-surface-400', bg: 'bg-surface-400/10' },
 ]
 
