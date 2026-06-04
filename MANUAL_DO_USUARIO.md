@@ -48,6 +48,9 @@ O Dashboard é a página inicial com uma visão geral das suas finanças.
 ### Comparativo Mensal
 Tabela detalhada mostrando cada categoria comparando o mês atual com o anterior, com percentual de diferença (vermelho = aumento, verde = redução).
 
+### Economia Sugerida
+Card no Dashboard que analisa as 3 maiores categorias de gasto do mês e sugere reduzir 10% em cada uma, mostrando quanto você economizaria se atingir a meta.
+
 ### IA Insights
 Se configurar uma chave de API de IA (OpenAI, Anthropic etc.) nas Configurações, o botão "Gerar" produz um resumo inteligente, previsão para o próximo mês e alertas de gastos fora do comum.
 

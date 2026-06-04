@@ -148,6 +148,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Scanner de código de barras:** Botão "Código" no TransactionForm. Usa `BarcodeDetector` API (Chrome/Edge, Android). Abre a câmera, detecta código de barras e busca dados do produto na Open Food Facts (grátis, sem chave). Preenche descrição, marca e preço automaticamente. Fallback: mostra o código como descrição. Não funciona no iPhone Safari.
 - **Bottom nav mobile com scroll horizontal:** Todos os 8 itens de navegação visíveis no celular sem sobreposição, com scroll horizontal e barra de rolagem oculta.
 - **Tags/labels nas transações:** 11 tags predefinidas (essencial, moradia, alimentação, etc) com cores. Seletor no TransactionForm, badges no TransactionCard, filtro na página Transactions. Schema: campo `tags` (JSON) na collection transactions via SQLite direto.
+- **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)

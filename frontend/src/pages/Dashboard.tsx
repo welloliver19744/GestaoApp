@@ -330,6 +330,39 @@ export function Dashboard() {
         </Card>
       </div>
 
+      {(() => {
+        const suggestions: { cat: string; spent: number; saving: number }[] = []
+        for (const [cat, spent] of byCategory.slice(0, 3)) {
+          const saving = Math.round(spent * 0.1 * 100) / 100
+          if (saving > 0) suggestions.push({ cat, spent, saving })
+        }
+        const suggestedTotal = suggestions.reduce((a, s) => a + s.saving, 0)
+        if (!suggestedTotal) return null
+        return (
+          <Card>
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={16} className="text-neon-cyan" />
+              <h2 className="text-sm font-semibold text-surface-300 uppercase tracking-wider">Economia Sugerida</h2>
+            </div>
+            <p className="text-sm text-surface-400 mb-3">
+              Reduza <strong className="text-surface-100">10%</strong> nos gastos das categorias abaixo para economizar até{' '}
+              <strong className="text-neon-green">{formatCurrency(suggestedTotal)}</strong> este mês:
+            </p>
+            <div className="space-y-2">
+              {suggestions.map(s => (
+                <div key={s.cat} className="flex items-center justify-between text-sm">
+                  <span className="text-surface-300">{s.cat}</span>
+                  <div className="text-right">
+                    <p className="text-surface-100">{formatCurrency(s.spent)}</p>
+                    <p className="text-xs text-neon-green">Economia: {formatCurrency(s.saving)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      })()}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center gap-2 mb-4">
