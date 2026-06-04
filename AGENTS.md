@@ -40,9 +40,12 @@ ssh ... 'tail -f /home/ubuntu/gestaocasa/scripts/push.log'
 # Reload nginx
 ssh ... 'docker exec gestaocasa-frontend nginx -s reload'
 
-# PocketBase superuser
-ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
-# Credentials: welloliver@gmail.com / 53525341
+# Fix schema (SQLite direto)
+scp scripts/fix_pb_schema.py ubuntu@...:/tmp/
+ssh ... 'docker stop gestaocasa-pocketbase && docker cp gestaocasa-pocketbase:/pb_data/data.db /tmp/pb_data.db && python3 /tmp/fix_pb_schema.py /tmp/pb_data.db && docker cp /tmp/pb_data.db gestaocasa-pocketbase:/pb_data/data.db && docker start gestaocasa-pocketbase'
+
+# Ver logs do PocketBase
+ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 ```
 
 ## Cron Ativo
@@ -54,10 +57,15 @@ ssh ... 'docker exec gestaocasa-pocketbase cat /pb_data/data.db ...
 
 ## PocketBase (v0.39)
 - Admin: `http://137.131.187.156:8091/_/`
-- Collections: transactions, categories, recurring_transactions, goals, push_subscriptions, users
+- Collections: transactions, categories, recurring_transactions, goals, push_subscriptions, users, groups
 - Auth: POST `/api/collections/users/auth-with-password`
 - Superuser: POST `/api/collections/_superusers/auth-with-password`
 - Hooks: `pocketbase/pb_hooks/*.pb.js` (reload automático)
+- **`$app.dao()` NÃO existe** — métodos DAO estão diretamente em `$app` (ex: `$app.findCollectionByNameOrId()`, `$app.findRecordsByFilter()`, `$app.save()`)
+- **Campos armazenados como JSON** na coluna `fields` da tabela `_collections` (não existe tabela `_fields` separada)
+- **`new Field()` + `importCollectionsByMarshaledJSON()`** rejeitam `_pb_users_auth_` como collectionId para campos relation. Workaround: Python script com sqlite3 direto
+- **`crypto.randomUUID()`** não disponível em cron context — usar fallback Math.random
+- Para alterar schema: parar container, copiar data.db, rodar Python, copiar de volta, iniciar container
 
 ## Collections API Fields
 

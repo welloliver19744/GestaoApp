@@ -1,11 +1,18 @@
 // Gera transações a partir de recorrências
 // Roda todo dia às 05:00 (UTC = 02:00 Brasília)
+function pbUuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+  })
+}
+
 cronAdd("generate-recurring", "0 5 * * *", () => {
   const today = new Date()
   const todayStr = today.toISOString().replace("T", " ")
 
   // Busca recorrências ativas com next_due <= hoje
-  const records = $app.dao().findRecordsByFilter(
+  const records = $app.findRecordsByFilter(
     "recurring_transactions",
     "active = true && next_due <= {:today}",
     "-next_due",
@@ -28,10 +35,10 @@ cronAdd("generate-recurring", "0 5 * * *", () => {
     var nextDue = new Date(record.get("next_due"))
     var dueStr = nextDue.toISOString().slice(0, 10)
 
-    var collection = $app.dao().findCollectionByNameOrId("transactions")
+    var collection = $app.findCollectionByNameOrId("transactions")
 
     if (paymentType === "cash") {
-      var tx = $app.dao().createRecord(collection, {
+      var tx = new Record(collection, {
         description: description,
         category: category,
         store: store,
@@ -45,13 +52,13 @@ cronAdd("generate-recurring", "0 5 * * *", () => {
         paid: false,
         notes: notes,
       })
-      $app.dao().saveRecord(tx)
+      $app.save(tx)
     } else {
-      var groupId = crypto.randomUUID()
+      var groupId = pbUuid()
       for (var i = 0; i < installmentCount; i++) {
         var due = new Date(nextDue)
         due.setMonth(due.getMonth() + i)
-        var tx = $app.dao().createRecord(collection, {
+        var tx = new Record(collection, {
           description: description,
           category: category,
           store: store,
@@ -66,7 +73,7 @@ cronAdd("generate-recurring", "0 5 * * *", () => {
           group_id: groupId,
           notes: notes,
         })
-        $app.dao().saveRecord(tx)
+        $app.save(tx)
       }
     }
 
@@ -79,6 +86,6 @@ cronAdd("generate-recurring", "0 5 * * *", () => {
     }
 
     record.set("next_due", newNextDue.toISOString().replace("T", " "))
-    $app.dao().saveRecord(record)
+    $app.save(record)
   })
 })
