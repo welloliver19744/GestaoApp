@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useCategories } from '../../hooks/useCategories'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
-import { pb } from '../../api/client'
+import { pb, transactions as transactionsApi } from '../../api/client'
 import type { Transaction, PaymentType } from '../../api/types'
 import { Camera, Loader2, Wand2, X } from 'lucide-react'
 
@@ -70,6 +70,24 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const [receiptPreview, setReceiptPreview] = useState<string | null>(
     initial?.receipt ? pb.files.getUrl(initial, initial.receipt, { thumb: '640x480' }) : null,
   )
+  const [stores, setStores] = useState<string[]>([])
+  const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
+  const storeRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {
+      const unique = [...new Set(r.map((tx: any) => tx.store).filter(Boolean))] as string[]
+      setStores(unique)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (storeRef.current && !storeRef.current.contains(e.target as Node)) setShowStoreSuggestions(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -214,13 +232,29 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
               ))}
             </select>
           </div>
-          <div>
+          <div ref={storeRef} className="relative">
             <label className="block text-sm font-medium text-surface-300 mb-1">Estabelecimento</label>
             <input
               value={form.store}
-              onChange={e => set('store', e.target.value)}
+              onChange={e => { set('store', e.target.value); setShowStoreSuggestions(true) }}
+              onFocus={() => { if (stores.length > 0) setShowStoreSuggestions(true) }}
               className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+              autoComplete="off"
             />
+            {showStoreSuggestions && form.store.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg bg-surface-800 border border-surface-700 shadow-xl max-h-40 overflow-y-auto">
+                {stores.filter(s => s.toLowerCase().includes(form.store.toLowerCase())).slice(0, 5).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => { set('store', s); setShowStoreSuggestions(false) }}
+                    className="w-full px-3 py-2 text-xs text-left text-surface-300 hover:bg-surface-700 hover:text-surface-100 transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
