@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { cards } from '../api/client'
-import { pb } from '../api/client'
+import { cards, pb } from '../api/client'
 import type { Card } from '../api/types'
+
+function getBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_POCKETBASE_URL
+  if (envUrl) return envUrl
+  return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8090'
+}
 
 export function useCards() {
   const [data, setData] = useState<Card[]>([])
@@ -27,7 +32,16 @@ export function useCards() {
   const create = async (payload: { name: string; type: 'credit' | 'debit'; due_day: number }) => {
     const owner = pb.authStore.record?.id
     if (!owner) throw new Error('Usuário não autenticado')
-    await cards.create({ ...payload, owner })
+    const token = pb.authStore.token
+    const res = await window.fetch(`${getBaseUrl()}/api/cards/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ ...payload, owner }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Falha ao criar cartão')
+    }
     await fetch()
   }
 
