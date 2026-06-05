@@ -101,6 +101,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **`new Record(collection)`** funciona para criar records em JS. **Sempre setar ID manual** (`record.set('id', id)`) antes de `$app.save(record)` — senão erro `GoError: empty primary key is not allowed`
 - **`record.markAsNotNew()`** existe e permite `$app.delete()` em records criados via `new Record()` em vez de carregados do DB
 - **Coleções criadas via SQL direto** (`INSERT INTO _collections`) têm CRUD REST quebrado (`data: {}`). **Workaround:** hooks customizados que usam `$app.save()` / `$app.delete()` com `new Record(collection)`
+- **`id` não é lido pelo ORM** em coleções SQL — adicionar `id` como campo `text` no array `fields` da `_collections` resolve (Python com sqlite3 direto). Ex: `{'name': 'id', 'type': 'text', 'required': True, 'options': {}, 'system': True, 'pk': True}`
 - **Campos armazenados como JSON** na coluna `fields` da tabela `_collections` (não existe tabela `_fields` separada)
 - **`new Field()` + `importCollectionsByMarshaledJSON()`** rejeitam `_pb_users_auth_` como collectionId para campos relation. Workaround: Python script com sqlite3 direto
 - **`crypto.randomUUID()`** não disponível em cron context — usar fallback Math.random
@@ -205,6 +206,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **NFC-e QR Code:** Botão "NFCe" no TransactionForm. Escaneia QR code do cupom fiscal SAT/SP, extrai a URL bruta do QR e envia pro hook `nfce_consulta.pb.js`. O hook faz fetch direto na SEFAZ SP (`ConsultaQRCode.aspx?p=...|3|1`), converte body (array de bytes) pra string com `String.fromCharCode`, parseia o HTML do DANFE (txtTopo → loja, Emissão → data, totalNumb txtMax → valor total, txtTit → itens) e retorna loja, data, valor total e itens da nota. Usa `c.requestInfo().query.url` (GET). Fallback: constroi URL via base64url da accessKey. Parser em `nfce.ts` — `parseNFCeQRCode()`, `lookupCNPJ()`. Descoberta importante: `c.requestInfo()` existe em minúsculo (não `c.Request()`) no PocketBase v0.39. `$http.send().body` retorna array de bytes, não string.
 - **Correção vencimento cartão:** `due_day` mudou de `number` pra `string` no estado do formulário, permitindo limpar o campo e digitar novo valor. Antes `parseInt('') || 1` impedia o usuário de apagar o "1" padrão. Conversão pra número ocorre apenas ao salvar.
 - **Cards CRUD via hooks:** REST API retorna `data: {}` para coleções criadas via SQL direto. Solução: hooks `cards_create.pb.js` com `POST /api/cards/create` (usa `new Record()` + `$app.save()` com ID manual) e `POST /api/cards/delete` (usa `new Record()` + `markAsNotNew()` + `$app.delete()`). Frontend em `useCards.ts` chama hooks via `window.fetch` em vez do SDK. Confirmação com `confirm()` antes de excluir.
+- **Cards list via hook:** REST API não retorna `id` para coleções SQL. Solução hook `GET /api/cards/list` com `$app.findRecordsByFilter()` + `r.getId()` (funciona após adicionar `id` no array `fields` do `_collections`).
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
