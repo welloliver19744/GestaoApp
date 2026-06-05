@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { cards, pb } from '../api/client'
+import { pb } from '../api/client'
 import type { Card } from '../api/types'
 
 function getBaseUrl(): string {
@@ -15,11 +15,16 @@ export function useCards() {
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await cards.getFullList({
-        filter: `owner = '${pb.authStore.record?.id}'`,
-        sort: 'name',
+      const token = pb.authStore.token
+      const res = await window.fetch(`${getBaseUrl()}/api/cards/list`, {
+        headers: { 'Authorization': `Bearer ${token}` },
       })
-      setData(result as unknown as Card[])
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Falha ao listar cartões')
+      }
+      const body = await res.json()
+      setData((body.items || []) as Card[])
     } catch (e) {
       console.error('Failed to fetch cards', e)
     } finally {
