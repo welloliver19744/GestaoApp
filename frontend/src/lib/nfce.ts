@@ -21,9 +21,7 @@ function tryParseJSON(text: string): Record<string, string> | null {
     const obj = JSON.parse(text)
     if (obj && typeof obj === 'object') {
       const flat: Record<string, string> = {}
-      for (const [k, v] of Object.entries(obj)) {
-        flat[k.toLowerCase()] = String(v ?? '')
-      }
+      for (const [k, v] of Object.entries(obj)) flat[k.toLowerCase()] = String(v ?? '')
       return flat
     }
   } catch {}
@@ -34,7 +32,7 @@ function tryParsePipe(text: string): Record<string, string> {
   const pairs: Record<string, string> = {}
   for (const part of text.split('|')) {
     const eq = part.indexOf('=')
-    if (eq === -1) continue
+    if (eq === -1) { pairs[`_${pairs.length}`] = part; continue }
     pairs[part.slice(0, eq).trim().toLowerCase()] = part.slice(eq + 1).trim()
   }
   return pairs
@@ -50,7 +48,23 @@ function tryParseAmpersand(text: string): Record<string, string> {
   return pairs
 }
 
-function extractFields(pairs: Record<string, string>): NFCeData {
+function extractCNPJFromAccessKey(chave: string): string {
+  if (!chave || chave.length < 20) return ''
+  return chave.slice(6, 20)
+}
+
+export async function lookupCNPJ(cnpj: string): Promise<string> {
+  try {
+    const res = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`)
+    if (!res.ok) return ''
+    const data = await res.json()
+    return data.nome_fantasia || data.razao_social || ''
+  } catch {
+    return ''
+  }
+}
+
+function extractFields(pairs: Record<string, string>, isDirectAccessKey: boolean): NFCeData {
   const chave = pairs['chavedacesso'] || pairs['chaveacesso'] || pairs['chave_de_acesso'] || pairs['chave'] || pairs['acesskey'] || pairs['accesskey'] || ''
   const rawTotal = pairs['valortotal'] || pairs['valor_total'] || pairs['valor'] || pairs['total'] || pairs['total_amount'] || pairs['vnf'] || ''
   const rawDate = pairs['dataemissao'] || pairs['data_emissao'] || pairs['data'] || pairs['datahora'] || pairs['demissao'] || pairs['date'] || ''
@@ -72,70 +86,107 @@ function extractFields(pairs: Record<string, string>): NFCeData {
 
   let store = rawStore
   if (!store && chave && chave.length >= 8) {
-    store = chave.slice(6, 20)
+    const cnpj = chave.slice(6, 20)
+    store = cnpj
+  }
+  if (isDirectAccessKey && !store && chave && chave.length >= 8) {
+    const cnpj = chave.slice(6, 20)
+    store = cnpj
   }
 
   return {
     total_amount,
     purchase_date,
-    description: store ? `Compra ${store}` : 'Compra NFC-e',
+    description: store ? (total_amount ? `Compra ${store}` : `NFC-e ${store}`) : 'Compra NFC-e',
     store,
     accessKey: chave,
   }
 }
 
+function isAccessKey(s: string): boolean {
+  return /^\d{44}$/.test(s.trim())
+}
+
 export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug: string } {
   if (!qrData) return { data: null, debug: 'QR vazio' }
 
+  let rawP = ''
   let decoded = ''
-  let rawP = qrData
 
   try {
     const url = new URL(qrData)
     rawP = url.searchParams.get('p') || url.searchParams.get('chave') || url.searchParams.get('chaveDeAcesso') || url.searchParams.get('id') || url.searchParams.get('token') || ''
+
     if (!rawP) {
-      decoded = url.searchParams.toString()
-      const pairs = tryParseAmpersand(decoded)
-      const result = extractFields(pairs)
-      if (result.total_amount || result.purchase_date) {
-        return { data: result, debug: `QR URL sem p, params: ${decoded}` }
+      const paramsStr = url.searchParams.toString()
+      const pairs = tryParseAmpersand(paramsStr)
+      const result = extractFields(pairs, false)
+      if (result.total_amount || result.purchase_date || result.accessKey) {
+        return { data: result, debug: `QR sem p, params: ${paramsStr}` }
       }
       return { data: null, debug: `QR URL sem parametro p. URL: ${qrData}` }
     }
   } catch {
-    decoded = qrData
-    const pairs = tryParsePipe(decoded) || tryParseAmpersand(decoded) || {}
-    const result = extractFields(pairs)
-    if (result.total_amount || result.purchase_date) {
-      return { data: result, debug: `QR texto direto: ${qrData}` }
+    decoded = qrData.trim()
+    if (isAccessKey(decoded)) {
+      const cnpj = extractCNPJFromAccessKey(decoded)
+      return {
+        data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: decoded },
+        debug: `QR texto direto (chave acesso): ${decoded}`,
+      }
     }
-    return { data: null, debug: `QR nao eh URL valida. Texto: ${qrData}` }
+    return { data: null, debug: `QR nao eh URL. Texto: ${qrData}` }
+  }
+
+  if (isAccessKey(rawP)) {
+    const cnpj = extractCNPJFromAccessKey(rawP)
+    return {
+      data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: rawP },
+      debug: `p contem chave acesso direta: ${rawP}`,
+    }
+  }
+
+  const rawParts = rawP.split('|')
+  if (rawParts.length >= 1 && isAccessKey(rawParts[0])) {
+    const chave = rawParts[0].trim()
+    const cnpj = extractCNPJFromAccessKey(chave)
+    return {
+      data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: chave },
+      debug: `p formato SP/SAT: chave=${chave}`,
+    }
   }
 
   decoded = base64URLDecode(rawP)
-
   if (!decoded) {
-    return { data: null, debug: `p encontrado mas base64 vazio. rawP: ${rawP}` }
+    const pairs = tryParsePipe(rawP)
+    const result = extractFields(pairs, true)
+    if (result.accessKey) {
+      return { data: result, debug: `p nao-base64, parse direto: ${rawP}` }
+    }
+    return { data: null, debug: `p encontrado mas base64 vazio e parse falhou. rawP: ${rawP}` }
   }
 
   let pairs = tryParseJSON(decoded)
   if (pairs && Object.keys(pairs).length) {
-    const result = extractFields(pairs)
-    return { data: result, debug: `Formato JSON. decoded: ${decoded}` }
+    const result = extractFields(pairs, false)
+    return { data: result, debug: `JSON. decoded: ${decoded}` }
   }
 
   pairs = tryParsePipe(decoded)
-  if (pairs && Object.keys(pairs).length > 1) {
-    const result = extractFields(pairs)
-    return { data: result, debug: `Formato pipe. decoded: ${decoded}` }
+  if (pairs && Object.keys(pairs).length > 0) {
+    const result = extractFields(pairs, false)
+    if (result.total_amount || result.accessKey) {
+      return { data: result, debug: `Pipe. decoded: ${decoded}` }
+    }
   }
 
   pairs = tryParseAmpersand(decoded)
-  if (pairs && Object.keys(pairs).length > 1) {
-    const result = extractFields(pairs)
-    return { data: result, debug: `Formato ampersand. decoded: ${decoded}` }
+  if (pairs && Object.keys(pairs).length > 0) {
+    const result = extractFields(pairs, false)
+    if (result.total_amount || result.accessKey) {
+      return { data: result, debug: `Ampersand. decoded: ${decoded}` }
+    }
   }
 
-  const result = extractFields({})
-  return { data: result, debug: `Formato desconhecido. rawP: ${rawP} decoded: ${decoded}` }
+  return { data: null, debug: `Formato desconhecido. rawP: ${rawP} decoded: ${decoded}` }
 }

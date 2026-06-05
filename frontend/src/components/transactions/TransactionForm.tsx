@@ -7,7 +7,7 @@ import { useCards } from '../../hooks/useCards'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
 import { scanBarcode, lookupBarcode } from '../../lib/barcode'
-import { parseNFCeQRCode } from '../../lib/nfce'
+import { parseNFCeQRCode, lookupCNPJ } from '../../lib/nfce'
 import { pb, transactions as transactionsApi } from '../../api/client'
 import type { Transaction, PaymentType, PaymentMethod } from '../../api/types'
 import { Camera, Loader2, Wand2, X, Scan, Tags, CreditCard, Banknote, Smartphone, Landmark, Receipt } from 'lucide-react'
@@ -198,15 +198,22 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     try {
       const qrData = await scanBarcode()
       const { data: nfce, debug } = parseNFCeQRCode(qrData)
-      if (!nfce || (!nfce.total_amount && !nfce.purchase_date)) {
+      if (!nfce || (!nfce.total_amount && !nfce.purchase_date && !nfce.accessKey)) {
         alert(`QR Code lido, mas não foi possível extrair dados.\n\nDebug: ${debug}`)
         return
       }
-      if (debug) console.log('[NFCe]', debug)
+      console.log('[NFCe]', debug)
+
+      let store = nfce.store
+      if (store && store.length === 14 && /^\d{14}$/.test(store)) {
+        const name = await lookupCNPJ(store)
+        if (name) store = name
+      }
+
       setForm(prev => ({
         ...prev,
-        description: nfce.description || prev.description,
-        store: nfce.store || prev.store,
+        description: store ? `Compra ${store}` : 'Compra NFC-e',
+        store: store || prev.store,
         purchase_date: nfce.purchase_date || prev.purchase_date,
         total_amount: nfce.total_amount || prev.total_amount,
         notes: `[NFCe] ${debug}`,
