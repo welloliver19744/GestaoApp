@@ -95,10 +95,16 @@ Analise a imagem e extraia APENAS estas informações em JSON:
 }
 Responda APENAS o JSON, sem formatação ou texto extra.`;
 
+  const cfg = getAIConfig()
+  const isAnthropic = cfg.provider === 'anthropic'
+  const imageBlock = isAnthropic
+    ? { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } }
+    : { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+
   const content = await callAI([
     { role: 'user', content: [
       { type: 'text', text: prompt },
-      { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+      imageBlock,
     ]},
   ], 300, 0.1);
 
