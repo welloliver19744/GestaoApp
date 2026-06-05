@@ -529,7 +529,7 @@ export function Settings() {
                 <p className="text-sm text-surface-100">{c.name}</p>
                 <p className="text-xs text-surface-500">{c.type === 'credit' ? 'Crédito' : 'Débito'}{c.due_day ? ` • venc. dia ${c.due_day}` : ''}</p>
               </div>
-              <button onClick={() => removeCard(c.id)} className="text-surface-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
+              <button onClick={() => { if (confirm(`Excluir cartão "${c.name}"?`)) removeCard(c.id) }} className="text-surface-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
             </div>
           ))}
           {addingCard ? (

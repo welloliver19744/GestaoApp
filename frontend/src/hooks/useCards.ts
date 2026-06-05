@@ -46,7 +46,16 @@ export function useCards() {
   }
 
   const remove = async (id: string) => {
-    await cards.delete(id)
+    const token = pb.authStore.token
+    const res = await window.fetch(`${getBaseUrl()}/api/cards/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Falha ao excluir cartão')
+    }
     await fetch()
   }
 
