@@ -124,17 +124,18 @@ export async function scanBillWithAI(imageBase64: string): Promise<{
   due_date: string
   category: string
   store: string
+  rawResponse: string
 }> {
-  const prompt = `Você é um assistente especializado em ler documentos financeiros brasileiros (notas fiscais, cupons fiscais, faturas, contas, recibos).
-Analise a imagem e extraia APENAS estas informações em JSON:
+  const prompt = `Você é um assistente especializado em ler cupons fiscais e notas fiscais brasileiras.
+Analise a imagem e extraia em JSON:
 {
-  "description": "descrição curta (ex: Supermercado Assai, Conta de Luz Junho, Boleto Netflix)",
-  "amount": SOMENTE o valor TOTAL A PAGAR ou TOTAL GERAL da nota (número puro, sem R$, usar ponto como decimal — ex: 848.45). NÃO use subtotal, parcelas ou valores intermediários,
-  "purchase_date": data da COMPRA ou EMISSÃO no formato YYYY-MM-DD (NÃO use data de vencimento). Se estiver em DD/MM/AAAA converta para AAAA-MM-DD,
-  "category": "categoria mais adequada entre: Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Assinaturas, Serviços, Salário, Outros",
-  "store": "nome do estabelecimento ou empresa emissora"
+  "description": "nome curto (ex: Supermercado Assai)",
+  "amount": O VALOR TOTAL que aparece no FINAL da nota, próximo das palavras TOTAL, TOTAL A PAGAR, VALOR TOTAL ou TOTAL GERAL. NÃO use valores de itens individuais. Retorne apenas o número com ponto decimal (ex: 848.45),
+  "purchase_date": data de emissão/compra formato YYYY-MM-DD,
+  "category": uma entre: Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Assinaturas, Serviços, Salário, Outros,
+  "store": nome do estabelecimento
 }
-Responda APENAS o JSON puro, sem markdown, sem blocos de código, sem texto extra.`;
+JSON puro, sem markdown.`;
 
   const cfg = getAIConfig()
   const isAnthropic = cfg.provider === 'anthropic'
@@ -147,16 +148,30 @@ Responda APENAS o JSON puro, sem markdown, sem blocos de código, sem texto extr
       { type: 'text', text: prompt },
       imageBlock,
     ]},
-  ], 300, 0.1);
+  ], 600, 0.1);
 
-  const parsed = extractJSON(content);
+  console.log('[SCAN DEBUG] Raw AI response:', content)
+
+  let parsed: Record<string, unknown> = {}
+  try {
+    parsed = extractJSON(content)
+  } catch {
+    return { description: 'Conta', amount: 0, due_date: new Date().toISOString().slice(0, 10), category: 'Outros', store: '', rawResponse: content }
+  }
+
+  console.log('[SCAN DEBUG] Parsed JSON:', parsed)
+
   const normalized = normalizeScannedJSON(parsed);
+
+  console.log('[SCAN DEBUG] Normalized:', normalized)
+
   return {
     description: normalized.description || 'Conta',
     amount: normalized.amount || 0,
     due_date: normalized.due_date || new Date().toISOString().slice(0, 10),
     category: normalized.category || 'Outros',
     store: normalized.store || '',
+    rawResponse: content,
   };
 }
 

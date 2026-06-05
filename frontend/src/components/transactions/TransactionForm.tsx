@@ -138,7 +138,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const handleScan = async (file: File) => {
     setScanning(true)
     try {
-      const compressed = await compressImage(file, 1200, 0.7)
+      const compressed = await compressImage(file, 2000, 0.92)
       const result = await scanBillWithAI(compressed.base64)
       
       const matchedCat = categories.find(c =>
@@ -153,7 +153,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         total_amount: result.amount || prev.total_amount,
         category: matchedCat || prev.category,
         receiptFile: compressed.file,
-        notes: `Importado via IA: ${file.name}`,
+        notes: `[DEBUG SCAN]\n${result.rawResponse}`,
       }))
       setReceiptPreview(URL.createObjectURL(compressed.file))
     } catch (e) {
