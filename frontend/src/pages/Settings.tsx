@@ -13,7 +13,7 @@ const PROVIDERS = [
   { value: 'openai', label: 'OpenAI', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
   { value: 'anthropic', label: 'Anthropic (Claude)', endpoint: 'https://api.anthropic.com/v1', model: 'claude-3-haiku-20240307' },
   { value: 'openrouter', label: 'OpenRouter (vários modelos)', endpoint: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o-mini' },
-  { value: 'groq', label: 'Groq (rápido)', endpoint: 'https://api.groq.com/openai/v1', model: 'llama-3.2-11b-vision-preview' },
+  { value: 'groq', label: 'Groq (rápido)', endpoint: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile' },
   { value: 'deepseek', label: 'DeepSeek (barato)', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
   { value: 'together', label: 'Together AI', endpoint: 'https://api.together.xyz/v1', model: 'mistralai/Mixtral-8x7B-Instruct-v0.1' },
   { value: 'perplexity', label: 'Perplexity', endpoint: 'https://api.perplexity.ai', model: 'sonar-pro' },

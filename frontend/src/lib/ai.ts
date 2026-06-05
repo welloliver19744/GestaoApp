@@ -66,7 +66,7 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
     const text = await res.text()
     let msg = `AI API error (${res.status}): ${text}`
     if (text.includes('content') && text.includes('string')) {
-      msg = `O modelo "${config.model}" não suporta visão/imagens. Escolha um modelo com suporte a visão (ex: llama-3.2-11b-vision-preview no Groq).`
+      msg = `O modelo "${config.model}" não suporta visão/imagens. Escolha um provedor/modelo com suporte a visão (ex: gemini-1.5-flash no Google Gemini ou gpt-4o-mini no OpenRouter/OpenAI).`
     }
     throw new Error(msg)
   }
