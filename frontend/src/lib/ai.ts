@@ -91,11 +91,28 @@ function parseAmount(v: unknown): number {
   return 0
 }
 
+function normalizeDateStr(raw: unknown): string {
+  if (!raw || typeof raw !== 'string') return ''
+  // já está em YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  // DD/MM/YYYY ou DD-MM-YYYY
+  const m = raw.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`
+  // MM/DD/YYYY
+  const m2 = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (m2) {
+    const [, mm, dd, yyyy] = m2
+    return `${yyyy}-${mm}-${dd}`
+  }
+  return ''
+}
+
 function normalizeScannedJSON(raw: Record<string, unknown>) {
+  const rawDate = (raw.purchase_date ?? raw.data_compra ?? raw.data ?? raw.due_date ?? raw.vencimento ?? raw.date ?? '') as string
   return {
     description: (raw.description ?? raw.descricao ?? raw.desc ?? '') as string,
-    amount: parseAmount(raw.amount ?? raw.valor ?? raw.total ?? raw.value ?? 0),
-    due_date: (raw.due_date ?? raw.vencimento ?? raw.data ?? raw.date ?? '') as string,
+    amount: parseAmount(raw.amount ?? raw.valor ?? raw.total_pagar ?? raw.total ?? raw.value ?? 0),
+    due_date: normalizeDateStr(rawDate),
     category: (raw.category ?? raw.categoria ?? 'Outros') as string,
     store: (raw.store ?? raw.estabelecimento ?? raw.empresa ?? raw.loja ?? '') as string,
   }
@@ -108,16 +125,16 @@ export async function scanBillWithAI(imageBase64: string): Promise<{
   category: string
   store: string
 }> {
-  const prompt = `Você é um assistente especializado em ler documentos financeiros (notas fiscais, faturas, contas, recibos, comprovantes).
+  const prompt = `Você é um assistente especializado em ler documentos financeiros brasileiros (notas fiscais, cupons fiscais, faturas, contas, recibos).
 Analise a imagem e extraia APENAS estas informações em JSON:
 {
-  "description": "descrição curta do item ou serviço (ex: Supermercado - compra mensal, Conta de Luz - junho, Boleto Netflix)",
-  "amount": valor total (número, sem R$, usar . como decimal),
-  "due_date": data de vencimento no formato YYYY-MM-DD (ou a data da compra se não tiver vencimento),
-  "category": "categoria mais adequada entre (Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Assinaturas, Serviços, Salário, Outros)",
-  "store": "nome do estabelecimento, empresa ou emissor"
+  "description": "descrição curta (ex: Supermercado Assai, Conta de Luz Junho, Boleto Netflix)",
+  "amount": SOMENTE o valor TOTAL A PAGAR ou TOTAL GERAL da nota (número puro, sem R$, usar ponto como decimal — ex: 848.45). NÃO use subtotal, parcelas ou valores intermediários,
+  "purchase_date": data da COMPRA ou EMISSÃO no formato YYYY-MM-DD (NÃO use data de vencimento). Se estiver em DD/MM/AAAA converta para AAAA-MM-DD,
+  "category": "categoria mais adequada entre: Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Assinaturas, Serviços, Salário, Outros",
+  "store": "nome do estabelecimento ou empresa emissora"
 }
-Responda APENAS o JSON, sem formatação ou texto extra.`;
+Responda APENAS o JSON puro, sem markdown, sem blocos de código, sem texto extra.`;
 
   const cfg = getAIConfig()
   const isAnthropic = cfg.provider === 'anthropic'
