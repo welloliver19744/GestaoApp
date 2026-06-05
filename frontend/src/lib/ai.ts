@@ -72,7 +72,9 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
   }
 
   const data = await res.json()
-  return data.choices?.[0]?.message?.content || data.content?.[0]?.text || ''
+  const raw = data.choices?.[0]?.message?.content || data.content?.[0]?.text || data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data)
+  console.log('[callAI raw]', raw.slice(0, 500))
+  return raw
 }
 
 function extractJSON(text: string) {
@@ -134,27 +136,22 @@ export async function scanBillWithAI(imageBase64: string): Promise<{
   store: string
   rawResponse: string
 }> {
-  const prompt = `Analise a imagem de cupom fiscal brasileiro e extraia APENAS o JSON abaixo.
+  const prompt = `Você é um especialista em ler notas fiscais e cupons brasileiros.
 
-ENTRADA: foto de cupom de supermercado, padaria, farmacia ou nota fiscal.
+Analise a imagem e extraia SOMENTE o JSON abaixo, sem texto extra, sem markdown.
 
-SAIDA (exemplo):
 {
-  "description": "Supermercado Assai",
-  "amount": 848.45,
-  "purchase_date": "2026-06-05",
-  "category": "Alimentacao",
-  "store": "ASSAI ATACADISTA"
+  "description": "descricao curta (ex: Supermercado Assai, Conta de Luz, Fatura Netflix)",
+  "amount": 0.00,
+  "purchase_date": "YYYY-MM-DD",
+  "category": "Alimentacao | Transporte | Moradia | Saude | Educacao | Lazer | Assinaturas | Servicos | Salario | Outros",
+  "store": "nome do estabelecimento"
 }
 
 REGRAS:
-- "amount": SOMENTE o ultimo valor do cupom, apos "TOTAL", "TOTAL R$", "VALOR TOTAL", "TOTAL A PAGAR", "TOTAL GERAL". NUNCA use valores de itens individuais.
-- "category": escolha UMA entre: Alimentacao, Transporte, Moradia, Saude, Educacao, Lazer, Assinaturas, Servicos, Salario, Outros
-- "description": nome curto do estabelecimento ou resumo
-- "store": nome completo do estabelecimento
-- "purchase_date": data de emissao no formato YYYY-MM-DD
-- Se nao encontrar o campo, use "" para string ou 0 para number
-- Responda SOMENTE o JSON, sem markdown, sem texto extra`
+- "amount" é SOMENTE o ultimo valor do cupom após "TOTAL", "TOTAL R$", "VALOR TOTAL", "TOTAL A PAGAR", "TOTAL GERAL". NUNCA pegue valor de item individual.
+- Se não achar um campo, use "" (string) ou 0 (number).
+- Responda APENAS o JSON puro.`
 
   const cfg = getAIConfig()
   const isAnthropic = cfg.provider === 'anthropic'
