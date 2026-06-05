@@ -4,6 +4,7 @@ export interface NFCeData {
   description: string
   store: string
   accessKey: string
+  rawUrl?: string
 }
 
 function base64URLDecode(str: string): string {
@@ -107,6 +108,10 @@ function isAccessKey(s: string): boolean {
   return /^\d{44}$/.test(s.trim())
 }
 
+function withUrl(data: NFCeData, url: string): NFCeData {
+  return { ...data, rawUrl: data.rawUrl || url }
+}
+
 export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug: string } {
   if (!qrData) return { data: null, debug: 'QR vazio' }
 
@@ -122,7 +127,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
       const pairs = tryParseAmpersand(paramsStr)
       const result = extractFields(pairs, false)
       if (result.total_amount || result.purchase_date || result.accessKey) {
-        return { data: result, debug: `QR sem p, params: ${paramsStr}` }
+        return { data: withUrl(result, qrData), debug: `QR sem p, params: ${paramsStr}` }
       }
       return { data: null, debug: `QR URL sem parametro p. URL: ${qrData}` }
     }
@@ -131,7 +136,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
     if (isAccessKey(decoded)) {
       const cnpj = extractCNPJFromAccessKey(decoded)
       return {
-        data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: decoded },
+        data: withUrl({ total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: decoded }, qrData),
         debug: `QR texto direto (chave acesso): ${decoded}`,
       }
     }
@@ -141,7 +146,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
   if (isAccessKey(rawP)) {
     const cnpj = extractCNPJFromAccessKey(rawP)
     return {
-      data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: rawP },
+      data: withUrl({ total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: rawP }, qrData),
       debug: `p contem chave acesso direta: ${rawP}`,
     }
   }
@@ -151,7 +156,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
     const chave = rawParts[0].trim()
     const cnpj = extractCNPJFromAccessKey(chave)
     return {
-      data: { total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: chave },
+      data: withUrl({ total_amount: 0, purchase_date: '', description: `NFC-e ${cnpj}`, store: cnpj, accessKey: chave }, qrData),
       debug: `p formato SP/SAT: chave=${chave}`,
     }
   }
@@ -161,7 +166,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
     const pairs = tryParsePipe(rawP)
     const result = extractFields(pairs, true)
     if (result.accessKey) {
-      return { data: result, debug: `p nao-base64, parse direto: ${rawP}` }
+      return { data: withUrl(result, qrData), debug: `p nao-base64, parse direto: ${rawP}` }
     }
     return { data: null, debug: `p encontrado mas base64 vazio e parse falhou. rawP: ${rawP}` }
   }
@@ -169,14 +174,14 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
   let pairs = tryParseJSON(decoded)
   if (pairs && Object.keys(pairs).length) {
     const result = extractFields(pairs, false)
-    return { data: result, debug: `JSON. decoded: ${decoded}` }
+    return { data: withUrl(result, qrData), debug: `JSON. decoded: ${decoded}` }
   }
 
   pairs = tryParsePipe(decoded)
   if (pairs && Object.keys(pairs).length > 0) {
     const result = extractFields(pairs, false)
     if (result.total_amount || result.accessKey) {
-      return { data: result, debug: `Pipe. decoded: ${decoded}` }
+      return { data: withUrl(result, qrData), debug: `Pipe. decoded: ${decoded}` }
     }
   }
 
@@ -184,7 +189,7 @@ export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug:
   if (pairs && Object.keys(pairs).length > 0) {
     const result = extractFields(pairs, false)
     if (result.total_amount || result.accessKey) {
-      return { data: result, debug: `Ampersand. decoded: ${decoded}` }
+      return { data: withUrl(result, qrData), debug: `Ampersand. decoded: ${decoded}` }
     }
   }
 

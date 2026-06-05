@@ -208,26 +208,23 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       let total = nfce.total_amount
       let date = nfce.purchase_date
 
-      // Try backend SEFAZ lookup if we have the access key
-      if (nfce.accessKey && nfce.accessKey.length >= 44) {
+      // Backend: fetch SEFAZ via URL direta do QR ou accessKey
+      const params = new URLSearchParams()
+      if (nfce.rawUrl) params.set('url', nfce.rawUrl)
+      else if (nfce.accessKey) params.set('accessKey', nfce.accessKey)
+      if (params.toString()) {
         try {
-          const res = await fetch('/api/nfce/consulta', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accessKey: nfce.accessKey }),
-          })
+          const res = await fetch(`/api/nfce/consulta?${params.toString()}`)
           if (res.ok) {
             const data = await res.json()
-            if (data.total_amount || data.purchase_date || data.store) {
-              total = data.total_amount || total
-              date = data.purchase_date || date
-              if (data.store && data.store.length > 8) store = data.store
-            }
+            if (data.store) store = data.store
+            if (data.total_amount) total = data.total_amount
+            if (data.purchase_date) date = data.purchase_date
           }
         } catch (_) {}
       }
 
-      // CNPJ lookup fallback
+      // CNPJ fallback
       if (store && store.length === 14 && /^\d{14}$/.test(store)) {
         try {
           const name = await lookupCNPJ(store)
