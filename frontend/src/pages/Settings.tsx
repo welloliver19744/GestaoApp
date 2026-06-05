@@ -33,7 +33,7 @@ export function Settings() {
   const [discordSaved, setDiscordSaved] = useState(false)
 
   const { data: cardList, create: createCard, remove: removeCard } = useCards()
-  const [newCard, setNewCard] = useState({ name: '', type: 'credit' as 'credit' | 'debit', due_day: 1 })
+  const [newCard, setNewCard] = useState({ name: '', type: 'credit' as 'credit' | 'debit', due_day: '1' })
   const [addingCard, setAddingCard] = useState(false)
 
   const [travelConfig, setTravelConfig] = useState(() => {
@@ -550,7 +550,7 @@ export function Settings() {
                     value={newCard.type}
                     onChange={e => {
                       const t = e.target.value as 'credit' | 'debit'
-                      setNewCard(p => ({ ...p, type: t, due_day: t === 'debit' ? 0 : p.due_day || 1 }))
+                      setNewCard(p => ({ ...p, type: t, due_day: t === 'debit' ? '' : p.due_day || '1' }))
                     }}
                     className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
                   >
@@ -564,7 +564,7 @@ export function Settings() {
                     <input
                       type="number" min={1} max={31}
                       value={newCard.due_day}
-                      onChange={e => setNewCard(p => ({ ...p, due_day: Math.max(1, Math.min(31, parseInt(e.target.value) || 1)) }))}
+                      onChange={e => setNewCard(p => ({ ...p, due_day: e.target.value }))}
                       placeholder="Dia"
                       className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
                     />
@@ -573,7 +573,7 @@ export function Settings() {
               </div>
               <div className="flex gap-2 pt-1">
                 <Button
-                  onClick={async () => { if (!newCard.name.trim()) return; await createCard(newCard); setNewCard({ name: '', type: 'credit', due_day: 1 }); setAddingCard(false) }}
+                  onClick={async () => { if (!newCard.name.trim()) return; const dueDayNum = Math.max(1, Math.min(31, parseInt(newCard.due_day) || 1)); await createCard({ ...newCard, due_day: dueDayNum }); setNewCard({ name: '', type: 'credit', due_day: '1' }); setAddingCard(false) }}
                   className="flex-1"
                 >
                   Salvar Cartão
