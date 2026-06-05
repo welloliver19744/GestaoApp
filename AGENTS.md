@@ -95,7 +95,12 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Auth: POST `/api/collections/users/auth-with-password`
 - Superuser: POST `/api/collections/_superusers/auth-with-password`
 - Hooks: `pocketbase/pb_hooks/*.pb.js` (reload automático)
-- **`$app.dao()` NÃO existe** — métodos DAO estão diretamente em `$app` (ex: `$app.findCollectionByNameOrId()`, `$app.findRecordsByFilter()`, `$app.save()`)
+- **Criação/edição direta no SQLite** para collections que o REST API não gerencia: parar container, copiar data.db, modificar com Python/sqlite3, copiar de volta, iniciar container
+- **`$app.dao()` NÃO existe** — `$app.Dao()` também não existe em PB v0.39 Goja runtime
+- **`$app`** expõe diretamente: `$app.findCollectionByNameOrId()`, `$app.findRecordsByFilter()`, `$app.findRecordById()`, `$app.save()`, `$app.delete()`
+- **`new Record(collection)`** funciona para criar records em JS. **Sempre setar ID manual** (`record.set('id', id)`) antes de `$app.save(record)` — senão erro `GoError: empty primary key is not allowed`
+- **`record.markAsNotNew()`** existe e permite `$app.delete()` em records criados via `new Record()` em vez de carregados do DB
+- **Coleções criadas via SQL direto** (`INSERT INTO _collections`) têm CRUD REST quebrado (`data: {}`). **Workaround:** hooks customizados que usam `$app.save()` / `$app.delete()` com `new Record(collection)`
 - **Campos armazenados como JSON** na coluna `fields` da tabela `_collections` (não existe tabela `_fields` separada)
 - **`new Field()` + `importCollectionsByMarshaledJSON()`** rejeitam `_pb_users_auth_` como collectionId para campos relation. Workaround: Python script com sqlite3 direto
 - **`crypto.randomUUID()`** não disponível em cron context — usar fallback Math.random
@@ -125,7 +130,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - user (relation), subscription (json), enabled
 
 ### cards
-- name, type (credit|debit), due_day, owner (relation)
+- name, type (credit|debit), due_day, owner (text — relation quebra REST)
 
 ### stores
 - name, owner (relation)
@@ -199,6 +204,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Persistência de Modelos de IA e Ajustes Mobile:** Correção na lista de modelos de IA para garantir a presença do modelo atual e padrão do provedor mesmo que não retornados pela API (evitando sumir após reload). Botão de busca de modelos unificado e 100% responsivo para mobile (ocultando texto extenso em telas pequenas e deixando apenas o ícone). Formulário de cadastro de cartões com vencimento condicional ao tipo "Crédito" e labels explícitos de dia de vencimento.
 - **NFC-e QR Code:** Botão "NFCe" no TransactionForm. Escaneia QR code do cupom fiscal SAT/SP, extrai a URL bruta do QR e envia pro hook `nfce_consulta.pb.js`. O hook faz fetch direto na SEFAZ SP (`ConsultaQRCode.aspx?p=...|3|1`), converte body (array de bytes) pra string com `String.fromCharCode`, parseia o HTML do DANFE (txtTopo → loja, Emissão → data, totalNumb txtMax → valor total, txtTit → itens) e retorna loja, data, valor total e itens da nota. Usa `c.requestInfo().query.url` (GET). Fallback: constroi URL via base64url da accessKey. Parser em `nfce.ts` — `parseNFCeQRCode()`, `lookupCNPJ()`. Descoberta importante: `c.requestInfo()` existe em minúsculo (não `c.Request()`) no PocketBase v0.39. `$http.send().body` retorna array de bytes, não string.
 - **Correção vencimento cartão:** `due_day` mudou de `number` pra `string` no estado do formulário, permitindo limpar o campo e digitar novo valor. Antes `parseInt('') || 1` impedia o usuário de apagar o "1" padrão. Conversão pra número ocorre apenas ao salvar.
+- **Cards CRUD via hooks:** REST API retorna `data: {}` para coleções criadas via SQL direto. Solução: hooks `cards_create.pb.js` com `POST /api/cards/create` (usa `new Record()` + `$app.save()` com ID manual) e `POST /api/cards/delete` (usa `new Record()` + `markAsNotNew()` + `$app.delete()`). Frontend em `useCards.ts` chama hooks via `window.fetch` em vez do SDK. Confirmação com `confirm()` antes de excluir.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
