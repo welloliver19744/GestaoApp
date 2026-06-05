@@ -8,7 +8,11 @@ export async function scanBarcode(): Promise<string> {
   }
 
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'environment' },
+    video: {
+      facingMode: 'environment',
+      width: { min: 640, ideal: 1920 },
+      height: { min: 480, ideal: 1080 },
+    },
   })
 
   // Build overlay UI
