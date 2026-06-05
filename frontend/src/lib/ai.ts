@@ -76,9 +76,10 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
 }
 
 function extractJSON(text: string) {
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('Resposta da IA não contém JSON válido')
-  return JSON.parse(match[0])
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start === -1 || end === -1 || end < start) throw new Error('Resposta da IA não contém JSON válido')
+  return JSON.parse(text.slice(start, end + 1))
 }
 
 function parseAmount(v: unknown): number {
@@ -111,11 +112,18 @@ function normalizeScannedJSON(raw: Record<string, unknown>) {
   const rawDate = (raw.purchase_date ?? raw.data_compra ?? raw.data ?? raw.due_date ?? raw.vencimento ?? raw.date ?? '') as string
   return {
     description: (raw.description ?? raw.descricao ?? raw.desc ?? '') as string,
-    amount: parseAmount(raw.amount ?? raw.valor ?? raw.total_pagar ?? raw.total ?? raw.value ?? 0),
+    amount: parseAmount(raw.amount ?? raw.total_amount ?? raw.valor ?? raw.total_pagar ?? raw.total ?? raw.value ?? 0),
     due_date: normalizeDateStr(rawDate),
     category: (raw.category ?? raw.categoria ?? 'Outros') as string,
     store: (raw.store ?? raw.estabelecimento ?? raw.empresa ?? raw.loja ?? '') as string,
   }
+}
+
+function cleanJSONResponse(text: string): string {
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start === -1 || end === -1 || end < start) throw new Error('Resposta da IA não contém JSON válido')
+  return text.slice(start, end + 1)
 }
 
 export async function scanBillWithAI(imageBase64: string): Promise<{
@@ -126,16 +134,27 @@ export async function scanBillWithAI(imageBase64: string): Promise<{
   store: string
   rawResponse: string
 }> {
-  const prompt = `Você é um assistente especializado em ler cupons fiscais e notas fiscais brasileiras.
-Analise a imagem e extraia em JSON:
+  const prompt = `Analise a imagem de cupom fiscal brasileiro e extraia APENAS o JSON abaixo.
+
+ENTRADA: foto de cupom de supermercado, padaria, farmacia ou nota fiscal.
+
+SAIDA (exemplo):
 {
-  "description": "nome curto (ex: Supermercado Assai)",
-  "amount": O VALOR TOTAL que aparece no FINAL da nota, próximo das palavras TOTAL, TOTAL A PAGAR, VALOR TOTAL ou TOTAL GERAL. NÃO use valores de itens individuais. Retorne apenas o número com ponto decimal (ex: 848.45),
-  "purchase_date": data de emissão/compra formato YYYY-MM-DD,
-  "category": uma entre: Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Assinaturas, Serviços, Salário, Outros,
-  "store": nome do estabelecimento
+  "description": "Supermercado Assai",
+  "amount": 848.45,
+  "purchase_date": "2026-06-05",
+  "category": "Alimentacao",
+  "store": "ASSAI ATACADISTA"
 }
-JSON puro, sem markdown.`;
+
+REGRAS:
+- "amount": SOMENTE o ultimo valor do cupom, apos "TOTAL", "TOTAL R$", "VALOR TOTAL", "TOTAL A PAGAR", "TOTAL GERAL". NUNCA use valores de itens individuais.
+- "category": escolha UMA entre: Alimentacao, Transporte, Moradia, Saude, Educacao, Lazer, Assinaturas, Servicos, Salario, Outros
+- "description": nome curto do estabelecimento ou resumo
+- "store": nome completo do estabelecimento
+- "purchase_date": data de emissao no formato YYYY-MM-DD
+- Se nao encontrar o campo, use "" para string ou 0 para number
+- Responda SOMENTE o JSON, sem markdown, sem texto extra`
 
   const cfg = getAIConfig()
   const isAnthropic = cfg.provider === 'anthropic'
@@ -150,20 +169,15 @@ JSON puro, sem markdown.`;
     ]},
   ], 600, 0.1);
 
-  console.log('[SCAN DEBUG] Raw AI response:', content)
-
   let parsed: Record<string, unknown> = {}
   try {
-    parsed = extractJSON(content)
+    const cleaned = cleanJSONResponse(content)
+    parsed = JSON.parse(cleaned)
   } catch {
     return { description: 'Conta', amount: 0, due_date: new Date().toISOString().slice(0, 10), category: 'Outros', store: '', rawResponse: content }
   }
 
-  console.log('[SCAN DEBUG] Parsed JSON:', parsed)
-
   const normalized = normalizeScannedJSON(parsed);
-
-  console.log('[SCAN DEBUG] Normalized:', normalized)
 
   return {
     description: normalized.description || 'Conta',
@@ -173,6 +187,71 @@ JSON puro, sem markdown.`;
     store: normalized.store || '',
     rawResponse: content,
   };
+}
+
+export async function scanReceiptWithAI(imageBase64: string): Promise<{
+  total_amount: number
+  store: string
+  items: Array<{
+    description: string
+    amount: number
+    suggested_category: string
+  }>
+  rawResponse: string
+}> {
+  const prompt = `Analise a imagem de cupom fiscal de varejo (supermercado, farmacia, loja) e extraia APENAS o JSON com todos os itens.
+
+SAIDA (exemplo):
+{
+  "total_amount": 848.45,
+  "store": "ASSAI ATACADISTA",
+  "items": [
+    { "description": "ARROZ TIO JOAO 5KG", "amount": 28.90, "suggested_category": "Alimentacao" },
+    { "description": "LEITE INTEGRAL 1L", "amount": 6.50, "suggested_category": "Alimentacao" }
+  ]
+}
+
+REGRAS:
+- "total_amount": SOMENTE o ultimo valor do cupom apos "TOTAL", "TOTAL R$", "VALOR TOTAL". NUNCA use valor de item individual.
+- "items": lista de TODOS os produtos comprados com seus precos individuais
+- "suggested_category" para cada item: Alimentacao, Bebidas, Higiene, Limpeza, Pet, Bebe, Outros
+- Se for conta unica (agua, luz, internet), retorne items com 1 elemento apenas
+- Responda SOMENTE o JSON, sem markdown, sem texto extra`
+
+  const cfg = getAIConfig()
+  const isAnthropic = cfg.provider === 'anthropic'
+  const imageBlock = isAnthropic
+    ? { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } }
+    : { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+
+  const content = await callAI([
+    { role: 'user', content: [
+      { type: 'text', text: prompt },
+      imageBlock,
+    ]},
+  ], 800, 0.1);
+
+  let parsed: Record<string, unknown> = {}
+  try {
+    const cleaned = cleanJSONResponse(content)
+    parsed = JSON.parse(cleaned)
+  } catch {
+    return { total_amount: 0, store: '', items: [], rawResponse: content }
+  }
+
+  return {
+    total_amount: parseAmount(parsed.total_amount ?? 0),
+    store: (parsed.store ?? '') as string,
+    items: Array.isArray(parsed.items) ? parsed.items.map((i: unknown) => {
+      const item = i as Record<string, unknown>
+      return {
+        description: (item.description ?? item.descricao ?? '') as string,
+        amount: parseAmount(item.amount ?? item.valor ?? item.price ?? 0),
+        suggested_category: (item.suggested_category ?? item.suggestedCategory ?? item.categoria ?? 'Outros') as string,
+      }
+    }) : [],
+    rawResponse: content,
+  }
 }
 
 export async function autoCategorize(description: string, categories: { id: string, name: string }[]): Promise<string> {
