@@ -59,8 +59,9 @@ Browser → Nginx (3001) → /api/ → Kong (8090) → PocketBase (8091 → 8090
 # Deploy frontend (local)
 cd frontend && npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
+# 🔴 OBRIGATORIO: fix permissions + restart container (arquivos novos herdam umask restrito)
+ssh ... 'chmod -R 755 /home/ubuntu/gestaocasa/frontend/dist/ && docker restart gestaocasa-frontend'
 # Nota: Sempre reiniciar o container para que o Docker remonte a pasta dist (evita 403 Forbidden por inodes stale/antigos)
-ssh ... 'chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker restart gestaocasa-frontend'
 
 # Backup manual
 ssh ... 'bash /home/ubuntu/gestaocasa/scripts/backup.sh'
@@ -190,9 +191,10 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Bottom nav mobile com scroll horizontal:** Todos os 8 itens de navegação visíveis no celular sem sobreposição, com scroll horizontal e barra de rolagem oculta.
 - **Tags/labels nas transações:** 11 tags predefinidas (essencial, moradia, alimentação, etc) com cores. Seletor no TransactionForm, badges no TransactionCard, filtro na página Transactions. Schema: campo `tags` (JSON) na collection transactions via SQLite direto.
 - **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
-- **Escaneamento de contas/cupons via IA (resiliente):** Parse resiliente via `normalizeScannedJSON` + `parseAmount` + `normalizeDateStr`. Aceita chaves PT/EN, converte DD/MM/YYYY. Imagem enviada em 2000px/0.92q. max_tokens=600. **DEBUG ATIVO:** campo notes mostra rawResponse da IA. Prompt reescrito com exemplo concreto de saída e estrutura ENTRADA → SAIDA → REGRAS para forçar o modelo a ler SOMENTE o último valor (TOTAL GERAL) ignorando itens individuais. `cleanJSONResponse()` substituiu regex guloso por indexOf/lastIndexOf. Nova `scanReceiptWithAI()` para leitura detalhada de itens de varejo. Pendente: remover debug do notes após confirmar fix. `ai.ts` — `scanBillWithAI`, `scanReceiptWithAI`, `parseAmount`, `normalizeScannedJSON`, `normalizeDateStr`, `cleanJSONResponse`.
+- **Escaneamento de contas/cupons via IA (resiliente):** Parse resiliente via `normalizeScannedJSON` + `parseAmount` + `normalizeDateStr`. Aceita chaves PT/EN, converte DD/MM/YYYY. Imagem enviada em 2600px/0.95q. max_tokens=600. **DEBUG ATIVO:** campo notes mostra rawResponse da IA. Prompt reescrito com exemplo concreto de saída e estrutura ENTRADA → SAIDA → REGRAS para forçar o modelo a ler SOMENTE o último valor (TOTAL GERAL) ignorando itens individuais. `cleanJSONResponse()` substituiu regex guloso por indexOf/lastIndexOf. Nova `scanReceiptWithAI()` para leitura detalhada de itens de varejo. Pendente: remover debug do notes após confirmar fix. `ai.ts` — `scanBillWithAI`, `scanReceiptWithAI`, `parseAmount`, `normalizeScannedJSON`, `normalizeDateStr`, `cleanJSONResponse`.
 - **Métodos de Pagamento + Cartões + Estabelecimentos:** Seleção de forma de pagamento (Dinheiro, Pix, Crédito, Débito) nas transações, suporte para cadastrar cartões (sem dados confidenciais, apenas nome e dia do vencimento) associados às despesas e auto-salvamento automático de estabelecimentos na coleção de lojas.
 - **Persistência de Modelos de IA e Ajustes Mobile:** Correção na lista de modelos de IA para garantir a presença do modelo atual e padrão do provedor mesmo que não retornados pela API (evitando sumir após reload). Botão de busca de modelos unificado e 100% responsivo para mobile (ocultando texto extenso em telas pequenas e deixando apenas o ícone). Formulário de cadastro de cartões com vencimento condicional ao tipo "Crédito" e labels explícitos de dia de vencimento.
+- **NFC-e QR Code:** Botão "NFCe" no TransactionForm que escaneia QR code do cupom fiscal e extrai valor total, data e CNPJ do estabelecimento diretamente do payload base64 (sem IA). Parser em `nfce.ts` — `parseNFCeQRCode()`.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)

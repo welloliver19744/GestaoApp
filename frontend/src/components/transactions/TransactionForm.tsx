@@ -7,9 +7,10 @@ import { useCards } from '../../hooks/useCards'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
 import { scanBarcode, lookupBarcode } from '../../lib/barcode'
+import { parseNFCeQRCode } from '../../lib/nfce'
 import { pb, transactions as transactionsApi } from '../../api/client'
 import type { Transaction, PaymentType, PaymentMethod } from '../../api/types'
-import { Camera, Loader2, Wand2, X, Scan, Tags, CreditCard, Banknote, Smartphone, Landmark } from 'lucide-react'
+import { Camera, Loader2, Wand2, X, Scan, Tags, CreditCard, Banknote, Smartphone, Landmark, Receipt } from 'lucide-react'
 import { PREDEFINED_TAGS, parseTags } from '../../lib/tags'
 
 interface TransactionFormProps {
@@ -93,6 +94,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   })
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [scanningNFCe, setScanningNFCe] = useState(false)
   const [barcoding, setBarcoding] = useState(false)
   const [categorizing, setCategorizing] = useState(false)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(
@@ -191,6 +193,31 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     }
   }
 
+  const handleNFCeScan = async () => {
+    setScanningNFCe(true)
+    try {
+      const qrData = await scanBarcode()
+      const nfce = parseNFCeQRCode(qrData)
+      if (!nfce) {
+        alert('QR Code não reconhecido como NFC-e.')
+        return
+      }
+      setForm(prev => ({
+        ...prev,
+        description: nfce.description || prev.description,
+        store: nfce.store || prev.store,
+        purchase_date: nfce.purchase_date || prev.purchase_date,
+        total_amount: nfce.total_amount || prev.total_amount,
+      }))
+    } catch (e) {
+      if (e instanceof Error && e.message !== 'cancelled') {
+        alert('Erro ao ler NFC-e: ' + e.message)
+      }
+    } finally {
+      setScanningNFCe(false)
+    }
+  }
+
   const clearReceipt = () => {
     setForm(prev => ({ ...prev, receiptFile: null }))
     setReceiptPreview(null)
@@ -251,6 +278,16 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
               >
                 {barcoding ? <Loader2 size={14} className="animate-spin" /> : <Scan size={14} />}
                 {barcoding ? 'Escaneando...' : 'Código'}
+              </button>
+              <button
+                type="button"
+                onClick={handleNFCeScan}
+                disabled={scanningNFCe}
+                className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 disabled:text-surface-600 disabled:cursor-not-allowed transition-colors"
+                title="Escanear QR code da NFC-e"
+              >
+                {scanningNFCe ? <Loader2 size={14} className="animate-spin" /> : <Receipt size={14} />}
+                {scanningNFCe ? 'Lendo...' : 'NFCe'}
               </button>
             </div>
           </div>
