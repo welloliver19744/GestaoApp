@@ -55,7 +55,7 @@ function extractCNPJFromAccessKey(chave: string): string {
 
 export async function lookupCNPJ(cnpj: string): Promise<string> {
   try {
-    const res = await fetch(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`)
+    const res = await fetch(`https://minhareceita.org/${cnpj}`)
     if (!res.ok) return ''
     const data = await res.json()
     return data.nome_fantasia || data.razao_social || ''

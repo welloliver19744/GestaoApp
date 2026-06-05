@@ -43,7 +43,7 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
   const endpoint = getAIEndpoint(config.provider, config.endpoint)
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const openaiCompat = ['openai', 'ollama', 'openrouter', 'groq', 'deepseek', 'together', 'perplexity', 'nvidia', 'mistral']
+  const openaiCompat = ['openai', 'ollama', 'openrouter', 'groq', 'deepseek', 'together', 'perplexity', 'nvidia', 'mistral', 'google']
   if (openaiCompat.includes(config.provider)) {
     headers['Authorization'] = `Bearer ${config.apiKey}`
   } else if (config.provider === 'anthropic') {
