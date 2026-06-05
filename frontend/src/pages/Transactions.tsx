@@ -162,8 +162,15 @@ export function Transactions() {
         })
         toast('Transação criada', 'success')
       }
-    } catch {
-      toast('Erro ao salvar transação', 'error')
+    } catch (e: unknown) {
+      const err = e as Record<string, unknown>
+      console.error('[TX_ERR]', e)
+      let msg = 'Erro:'
+      if (typeof err?.data === 'object') msg += JSON.stringify(err.data).slice(0, 100)
+      else if (typeof err?.response === 'object') msg += JSON.stringify(err.response).slice(0, 100)
+      else msg += String(err?.message || 'desconhecido')
+      msg += ' | payload: ' + ((err as {payload?: string}).payload || '').slice(0, 200)
+      toast(msg, 'error')
     }
   }
 

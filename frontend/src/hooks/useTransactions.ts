@@ -2,6 +2,32 @@ import { useState, useEffect, useCallback } from 'react'
 import { pb, transactions, stores } from '../api/client'
 import type { Transaction, TransactionCreate } from '../api/types'
 
+async function pbCreate(data: Record<string, unknown>) {
+  const clean: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined && v !== null && v !== '') clean[k] = v
+  }
+  const bodyStr = JSON.stringify(clean)
+  console.log('[PBCREATE] payload:', bodyStr)
+  const url = pb.buildURL('/api/collections/transactions/records')
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': pb.authStore.token || '',
+    },
+    body: bodyStr,
+  })
+  const respBody = await res.json().catch(() => ({ message: res.statusText }))
+  console.log('[PBCREATE] response:', res.status, JSON.stringify(respBody))
+  if (!res.ok) {
+    const err: Record<string, unknown> = { data: respBody.data || {}, response: respBody, message: respBody.message || 'Error', status: res.status }
+    ;(err as unknown as { payload: string }).payload = bodyStr
+    throw err
+  }
+  return respBody
+}
+
 function toFormData(data: Record<string, unknown>): FormData {
   const fd = new FormData()
   for (const [key, value] of Object.entries(data)) {
@@ -54,6 +80,10 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
 
   const create = async (payload: TransactionCreate & { receiptFile?: File }) => {
     const { receiptFile, ...rest } = payload
+    // Always include created_by from auth (some callers like Dashboard omit it)
+    if (!rest.created_by && pb.authStore.record?.id) {
+      rest.created_by = pb.authStore.record.id
+    }
     if (payload.payment_type === 'cash') {
       const data = {
         ...rest,
@@ -66,7 +96,7 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       if (receiptFile) {
         await transactions.create(toFormData(data as unknown as Record<string, unknown>))
       } else {
-        await transactions.create(data)
+        await pbCreate(data)
       }
     } else {
       const groupId = safeUUID()
@@ -85,7 +115,7 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
         if (receiptFile) {
           return transactions.create(toFormData(data as unknown as Record<string, unknown>))
         }
-        return transactions.create(data)
+        return pbCreate(data)
       })
       await Promise.all(promises)
     }

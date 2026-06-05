@@ -255,6 +255,7 @@ export function Dashboard() {
         store: data.store || undefined,
         purchase_date: data.purchase_date,
         total_amount: data.total_amount,
+        currency: data.currency || 'BRL',
         payment_type: data.payment_type,
         installment_count: data.payment_type === 'installment' ? data.installment_count : 1,
         installment_number: 1,

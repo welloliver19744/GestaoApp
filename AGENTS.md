@@ -112,10 +112,11 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 ## Collections API Fields
 
 ### transactions
-- description, category (relation), store, purchase_date, total_amount, payment_type (cash|installment)
+- description, category (text — mudado de relation pra bypassar bug PB v0.39), store, purchase_date, total_amount, payment_type (cash|installment)
 - installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by
-- group_id, notes, receipt (file), currency, original_amount, created_by (relation), shared_with (relation[]), group (relation)
-- tags (json), payment_method, card_id
+- group_id, notes, receipt (file), currency (required=true), original_amount, created_by (relation → _pb_users_auth_), shared_with (relation[]), group (relation → 803c7281-...)
+- tags (json), payment_method (text), card_id (text)
+- **listRule:** `@request.auth.id != '' && (created_by = @request.auth.id || shared_with ?= @request.auth.id || (group != '' && group.members ?= @request.auth.id))`
 
 ### groups
 - name, description, members (relation[]), created_by (relation)
@@ -207,6 +208,12 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Correção vencimento cartão:** `due_day` mudou de `number` pra `string` no estado do formulário, permitindo limpar o campo e digitar novo valor. Antes `parseInt('') || 1` impedia o usuário de apagar o "1" padrão. Conversão pra número ocorre apenas ao salvar.
 - **Cards CRUD via hooks:** REST API retorna `data: {}` para coleções criadas via SQL direto. Solução: hooks `cards_create.pb.js` com `POST /api/cards/create` (usa `new Record()` + `$app.save()` com ID manual) e `POST /api/cards/delete` (usa `new Record()` + `markAsNotNew()` + `$app.delete()`). Frontend em `useCards.ts` chama hooks via `window.fetch` em vez do SDK. Confirmação com `confirm()` antes de excluir.
 - **Cards list via hook:** REST API não retorna `id` para coleções SQL. Solução hook `GET /api/cards/list` com `$app.findRecordsByFilter()` + `r.getId()` (funciona após adicionar `id` no array `fields` do `_collections`).
+- **FIX category relation bug:** PocketBase v0.39 valida relations internamente com `dao.FindRecordById(collection.Id, recordId)` durante save, mas falha para coleções criadas via SQL direto (erro `validation_missing_rel_records`). Solução: mudar campo `category` de `relation` para `text`.
+- **FIX Dashboard missing currency/created_by:** `Dashboard.tsx handleCreate` não enviava `currency` (campo required=true → `validation_required`) nem `created_by` (listRule filtra por `created_by = @request.auth.id` → transação invisível no UI). Solução: adicionar `created_by` no `useTransactions.ts create()` como fallback automático.
+- **FIX empty relation collectionId:** Ao criar collections via SQL, campos `relation` ficam com `collectionId: ''`. Corrigir via Python no data.db setando `_pb_users_auth_` para users, ou UUID real para groups.
+- **FIX empty select values:** Campos `select` (payment_type, currency) ficam com `values: []` em coleções SQL. Corrigir via Python no data.db.
+- **Raw fetch bypass:** `useTransactions.ts pbCreate()` usa `window.fetch()` em vez de `pb.collection('transactions').create()` porque o SDK do PocketBase faz auto-detecção de tipo (multipart vs JSON) conflitante com o campo `receipt`.
+- **Nginx DNS `pocketbase` funciona** no Docker (172.20.0.2). `nslookup` falha no container por ser BusyBox.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
@@ -218,3 +225,12 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - Metas compartilhadas (grupo contribui para mesma meta)
 - Modo escuro automático (follow system)
 - Suporte a mais idiomas (inglês, espanhol)
+
+## Session Log 2026-06-05
+- **Bug raíz:** Transações criadas do Dashboard nunca apareciam na lista. Causa: listRule `created_by = @request.auth.id` com `created_by` vazio (Dashboard não enviava o campo).
+- **Fix 1:** `category` mudado de `relation` pra `text` — PB v0.39 falha validação de relations em coleções SQL durante save (`validation_missing_rel_records`).
+- **Fix 2:** Todas relations com `collectionId` vazio populadas via script Python (`_pb_users_auth_`).
+- **Fix 3:** Select fields (payment_type, currency) com values vazios populados via script Python.
+- **Fix 4:** `useTransactions.ts create()` agora injeta `created_by` automaticamente se caller não enviar.
+- **Fix 5:** 5 transações órfãs com `created_by=''` corrigidas no SQLite direto.
+- **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário.
