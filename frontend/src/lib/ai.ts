@@ -64,7 +64,11 @@ async function callAI(messages: unknown[], maxTokens = 500, temperature = 0.3) {
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`AI API error (${res.status}): ${text}`)
+    let msg = `AI API error (${res.status}): ${text}`
+    if (text.includes('content') && text.includes('string')) {
+      msg = `O modelo "${config.model}" não suporta visão/imagens. Escolha um modelo com suporte a visão (ex: llama-3.2-11b-vision-preview no Groq).`
+    }
+    throw new Error(msg)
   }
 
   const data = await res.json()
