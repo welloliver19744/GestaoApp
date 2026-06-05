@@ -197,17 +197,19 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     setScanningNFCe(true)
     try {
       const qrData = await scanBarcode()
-      const nfce = parseNFCeQRCode(qrData)
-      if (!nfce) {
-        alert('QR Code não reconhecido como NFC-e.')
+      const { data: nfce, debug } = parseNFCeQRCode(qrData)
+      if (!nfce || (!nfce.total_amount && !nfce.purchase_date)) {
+        alert(`QR Code lido, mas não foi possível extrair dados.\n\nDebug: ${debug}`)
         return
       }
+      if (debug) console.log('[NFCe]', debug)
       setForm(prev => ({
         ...prev,
         description: nfce.description || prev.description,
         store: nfce.store || prev.store,
         purchase_date: nfce.purchase_date || prev.purchase_date,
         total_amount: nfce.total_amount || prev.total_amount,
+        notes: `[NFCe] ${debug}`,
       }))
     } catch (e) {
       if (e instanceof Error && e.message !== 'cancelled') {

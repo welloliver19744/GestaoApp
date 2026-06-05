@@ -12,34 +12,49 @@ function base64URLDecode(str: string): string {
   try {
     return decodeURIComponent(escape(atob(str)))
   } catch {
-    try { return atob(str) } catch { return str }
+    try { return atob(str) } catch { return '' }
   }
 }
 
-export function parseNFCeQRCode(qrData: string): NFCeData | null {
-  if (!qrData) return null
+function tryParseJSON(text: string): Record<string, string> | null {
+  try {
+    const obj = JSON.parse(text)
+    if (obj && typeof obj === 'object') {
+      const flat: Record<string, string> = {}
+      for (const [k, v] of Object.entries(obj)) {
+        flat[k.toLowerCase()] = String(v ?? '')
+      }
+      return flat
+    }
+  } catch {}
+  return null
+}
 
-  let url: URL
-  try { url = new URL(qrData) } catch { return null }
-
-  const rawP = url.searchParams.get('p')
-  if (!rawP) return null
-
-  const decoded = base64URLDecode(rawP)
-
+function tryParsePipe(text: string): Record<string, string> {
   const pairs: Record<string, string> = {}
-  const parts = decoded.split('|')
-  for (const part of parts) {
+  for (const part of text.split('|')) {
     const eq = part.indexOf('=')
     if (eq === -1) continue
-    const k = part.slice(0, eq).trim().toLowerCase()
-    const v = part.slice(eq + 1).trim()
-    pairs[k] = v
+    pairs[part.slice(0, eq).trim().toLowerCase()] = part.slice(eq + 1).trim()
   }
+  return pairs
+}
 
-  const chave = pairs['chavedacesso'] || pairs['chaveacesso'] || pairs['chave_de_acesso'] || pairs['chave'] || ''
-  const rawTotal = pairs['valortotal'] || pairs['valor_total'] || pairs['valor'] || pairs['total'] || ''
-  const rawDate = pairs['dataemissao'] || pairs['data_emissao'] || pairs['data'] || pairs['datahora'] || ''
+function tryParseAmpersand(text: string): Record<string, string> {
+  const pairs: Record<string, string> = {}
+  for (const part of text.split('&')) {
+    const eq = part.indexOf('=')
+    if (eq === -1) continue
+    pairs[part.slice(0, eq).trim().toLowerCase()] = decodeURIComponent(part.slice(eq + 1).trim())
+  }
+  return pairs
+}
+
+function extractFields(pairs: Record<string, string>): NFCeData {
+  const chave = pairs['chavedacesso'] || pairs['chaveacesso'] || pairs['chave_de_acesso'] || pairs['chave'] || pairs['acesskey'] || pairs['accesskey'] || ''
+  const rawTotal = pairs['valortotal'] || pairs['valor_total'] || pairs['valor'] || pairs['total'] || pairs['total_amount'] || pairs['vnf'] || ''
+  const rawDate = pairs['dataemissao'] || pairs['data_emissao'] || pairs['data'] || pairs['datahora'] || pairs['demissao'] || pairs['date'] || ''
+  const rawStore = pairs['nome'] || pairs['nome_fantasia'] || pairs['nomefantasia'] || pairs['razao_social'] || pairs['razaosocial'] || pairs['emitente'] || pairs['xfan'] || pairs['xnome'] || ''
 
   let total_amount = 0
   if (rawTotal) {
@@ -49,20 +64,16 @@ export function parseNFCeQRCode(qrData: string): NFCeData | null {
 
   let purchase_date = ''
   if (rawDate) {
-    const parts = rawDate.split(' ')
-    const dateOnly = parts[0]
-    const m = dateOnly.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/)
+    const d = rawDate.split(' ')[0]
+    const m = d.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/)
     if (m) purchase_date = `${m[3]}-${m[2]}-${m[1]}`
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) purchase_date = dateOnly
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) purchase_date = d
   }
 
-  let store = ''
-  if (chave && chave.length >= 8) {
-    const cnpj = chave.slice(6, 20)
-    store = cnpj
+  let store = rawStore
+  if (!store && chave && chave.length >= 8) {
+    store = chave.slice(6, 20)
   }
-
-  store = pairs['nome'] || pairs['nome_fantasia'] || pairs['nomefantasia'] || pairs['razao_social'] || pairs['razaosocial'] || pairs['emitente'] || store
 
   return {
     total_amount,
@@ -71,4 +82,60 @@ export function parseNFCeQRCode(qrData: string): NFCeData | null {
     store,
     accessKey: chave,
   }
+}
+
+export function parseNFCeQRCode(qrData: string): { data: NFCeData | null; debug: string } {
+  if (!qrData) return { data: null, debug: 'QR vazio' }
+
+  let decoded = ''
+  let rawP = qrData
+
+  try {
+    const url = new URL(qrData)
+    rawP = url.searchParams.get('p') || url.searchParams.get('chave') || url.searchParams.get('chaveDeAcesso') || url.searchParams.get('id') || url.searchParams.get('token') || ''
+    if (!rawP) {
+      decoded = url.searchParams.toString()
+      const pairs = tryParseAmpersand(decoded)
+      const result = extractFields(pairs)
+      if (result.total_amount || result.purchase_date) {
+        return { data: result, debug: `QR URL sem p, params: ${decoded}` }
+      }
+      return { data: null, debug: `QR URL sem parametro p. URL: ${qrData}` }
+    }
+  } catch {
+    decoded = qrData
+    const pairs = tryParsePipe(decoded) || tryParseAmpersand(decoded) || {}
+    const result = extractFields(pairs)
+    if (result.total_amount || result.purchase_date) {
+      return { data: result, debug: `QR texto direto: ${qrData}` }
+    }
+    return { data: null, debug: `QR nao eh URL valida. Texto: ${qrData}` }
+  }
+
+  decoded = base64URLDecode(rawP)
+
+  if (!decoded) {
+    return { data: null, debug: `p encontrado mas base64 vazio. rawP: ${rawP}` }
+  }
+
+  let pairs = tryParseJSON(decoded)
+  if (pairs && Object.keys(pairs).length) {
+    const result = extractFields(pairs)
+    return { data: result, debug: `Formato JSON. decoded: ${decoded}` }
+  }
+
+  pairs = tryParsePipe(decoded)
+  if (pairs && Object.keys(pairs).length > 1) {
+    const result = extractFields(pairs)
+    return { data: result, debug: `Formato pipe. decoded: ${decoded}` }
+  }
+
+  pairs = tryParseAmpersand(decoded)
+  if (pairs && Object.keys(pairs).length > 1) {
+    const result = extractFields(pairs)
+    return { data: result, debug: `Formato ampersand. decoded: ${decoded}` }
+  }
+
+  const result = extractFields({})
+  return { data: result, debug: `Formato desconhecido. rawP: ${rawP} decoded: ${decoded}` }
 }
