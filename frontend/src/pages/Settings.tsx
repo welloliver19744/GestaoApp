@@ -290,15 +290,13 @@ export function Settings() {
                   onClick={() => fetchModels()}
                   disabled={loadingModels}
                   variant={models ? 'secondary' : 'primary'}
-                  className="px-3 min-w-[40px] flex items-center justify-center gap-1.5 shrink-0 w-10 sm:w-auto"
+                  className="w-10 h-10 shrink-0 flex items-center justify-center p-0"
+                  title="Buscar/Atualizar modelos"
                 >
                   {loadingModels ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    <>
-                      <RefreshCw size={16} />
-                      {!models && <span className="hidden sm:inline">Buscar modelos</span>}
-                    </>
+                    <RefreshCw size={16} />
                   )}
                 </Button>
               )}
