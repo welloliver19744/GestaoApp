@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { pb, transactions } from '../api/client'
+import { pb, transactions, stores } from '../api/client'
 import type { Transaction, TransactionCreate } from '../api/types'
 
 function toFormData(data: Record<string, unknown>): FormData {
@@ -7,11 +7,22 @@ function toFormData(data: Record<string, unknown>): FormData {
   for (const [key, value] of Object.entries(data)) {
     if (value instanceof File) {
       fd.append(key, value, value.name)
+    } else if (Array.isArray(value)) {
+      fd.append(key, JSON.stringify(value))
     } else if (value !== undefined && value !== null) {
       fd.append(key, String(value))
     }
   }
   return fd
+}
+
+function safeUUID(): string {
+  try { return crypto.randomUUID() } catch {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+  }
 }
 
 interface UseTransactionsOptions {
@@ -58,7 +69,7 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
         await transactions.create(data)
       }
     } else {
-      const groupId = crypto.randomUUID()
+      const groupId = safeUUID()
       const val = payload.installment_value
       const promises = Array.from({ length: payload.installment_count }, (_, i) => {
         const due = new Date(payload.purchase_date)
@@ -79,6 +90,15 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       await Promise.all(promises)
     }
     await fetch()
+    // auto-save store
+    if (payload.store) {
+      try {
+        const existing = await stores.getList(1, 1, { filter: `name = '${payload.store.replace(/'/g, "''")}' && owner = '${pb.authStore.record?.id}'` })
+        if (existing.totalItems === 0) {
+          await stores.create({ name: payload.store, owner: pb.authStore.record?.id })
+        }
+      } catch {}
+    }
   }
 
   const update = async (tx: Transaction, payload: Partial<TransactionCreate> & { receiptFile?: File }) => {
@@ -90,6 +110,15 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       await transactions.update(tx.id, rest)
     }
     await fetch()
+    // auto-save store on update
+    if (payload.store) {
+      try {
+        const existing = await stores.getList(1, 1, { filter: `name = '${payload.store.replace(/'/g, "''")}' && owner = '${pb.authStore.record?.id}'` })
+        if (existing.totalItems === 0) {
+          await stores.create({ name: payload.store, owner: pb.authStore.record?.id })
+        }
+      } catch {}
+    }
   }
 
   const remove = async (tx: Transaction) => {

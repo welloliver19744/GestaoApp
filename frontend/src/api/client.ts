@@ -1,5 +1,5 @@
 import PocketBase from 'pocketbase'
-import type { Transaction, Category, RecurringTransaction, Group } from './types'
+import type { Transaction, Category, RecurringTransaction, Group, Card, Store } from './types'
 
 function getBaseUrl(): string {
   const envUrl = import.meta.env.VITE_POCKETBASE_URL
@@ -17,3 +17,5 @@ export const transactions = pb.collection<Transaction>('transactions')
 export const categories = pb.collection<Category>('categories')
 export const recurring = pb.collection<RecurringTransaction>('recurring_transactions')
 export const groups = pb.collection<Group>('groups')
+export const cards = pb.collection<Card>('cards')
+export const stores = pb.collection<Store>('stores')

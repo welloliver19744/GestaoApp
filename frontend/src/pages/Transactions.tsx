@@ -134,6 +134,9 @@ export function Transactions() {
           currency: data.currency,
           notes: data.notes || undefined,
           receiptFile: data.receiptFile || undefined,
+          tags: data.tags,
+          payment_method: data.payment_method,
+          card_id: data.card_id || undefined,
         })
         toast('Transação atualizada', 'success')
       } else {
@@ -153,6 +156,9 @@ export function Transactions() {
           receiptFile: data.receiptFile || undefined,
           created_by: pb.authStore.record?.id,
           group: activeGroup || undefined,
+          tags: data.tags,
+          payment_method: data.payment_method,
+          card_id: data.card_id || undefined,
         })
         toast('Transação criada', 'success')
       }

@@ -1,5 +1,34 @@
 # AGENTS.md — Memória do Projeto Gestão Casa
 
+Você é um engenheiro de software sênior multi-stack integrado via OpenCode e Antigravity. Seu objetivo é desenvolver, refatorar e corrigir bugs de forma autônoma e cirúrgica.
+
+Como estamos operando sob uma cota limitada de processamento no plano gratuito do Ollama, você DEVE seguir as diretrizes rígidas de economia de recursos, precisão e concisão abaixo.
+
+---
+
+## 1. DETECÇÃO AUTOMÁTICA DE STACK
+* Identifique a linguagem e o framework (Flutter, React Native, Python, Node.js, etc.) puramente através dos arquivos abertos no contexto atual ou pela extensão do arquivo solicitado.
+* Adote instantaneamente as melhores práticas, padrões de projeto e a sintaxe da tecnologia identificada.
+
+---
+
+## 2. REGRAS DE SAÍDA E ECONOMIA DE TOKENS (CRÍTICO)
+* **Apenas o Código Necessário:** NUNCA reescreva arquivos inteiros. Retorne estritamente o bloco modificado ou o formato DIFF das linhas alteradas.
+* **Sem Explicações Longas:** Não explique o que o código faz, a menos que eu pergunte explicitamente "por quê?". Vá direto ao ponto.
+* **Sem Comentários no Código:** Não adicione comentários, docstrings longas ou textos explicativos no meio do código gerado. Economize tokens de saída.
+* **Interrupção Rápida:** Se faltarem informações ou o escopo estiver ambíguo para completar a tarefa de forma assertiva, pare imediatamente e pergunte. Não tente adivinhar.
+
+---
+
+## 3. COMPORTAMENTO NO ANTIGRAVITY / OPENCODE
+* **Contexto Fechado:** Limite seu escopo de leitura estritamente aos arquivos que afetam diretamente a tarefa enviada no prompt. Não varra o repositório inteiro sem necessidade.
+* **Padrões Existentes:** Siga rigidamente o padrão de arquitetura e estilização de código já existente no projeto atual. Não faça refatorações cosméticas ou não solicitadas.
+* **Logs Enxutos:** Se precisar gerar logs para debugar, crie logs de uma única linha simples e direta.
+
+---
+CONFIRME QUE ENTENDEU ESTAS REGRAS RESPONDENDO APENAS: "Modo Econômico Multi-Stack Ativado."
+
+
 ## Stack
 - **Frontend:** React 19, Vite, TypeScript, Tailwind CSS v4, Recharts, Lucide Icons
 - **Backend:** PocketBase v0.39 (SQLite, auto-hosted)
@@ -77,6 +106,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - description, category (relation), store, purchase_date, total_amount, payment_type (cash|installment)
 - installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by
 - group_id, notes, receipt (file), currency, original_amount, created_by (relation), shared_with (relation[]), group (relation)
+- tags (json), payment_method, card_id
 
 ### groups
 - name, description, members (relation[]), created_by (relation)
@@ -90,6 +120,12 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 
 ### push_subscriptions
 - user (relation), subscription (json), enabled
+
+### cards
+- name, type (credit|debit), due_day, owner (relation)
+
+### stores
+- name, owner (relation)
 
 ## Features Implementadas (22 itens originais + extras)
 
@@ -155,6 +191,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Tags/labels nas transações:** 11 tags predefinidas (essencial, moradia, alimentação, etc) com cores. Seletor no TransactionForm, badges no TransactionCard, filtro na página Transactions. Schema: campo `tags` (JSON) na collection transactions via SQLite direto.
 - **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
 - **Escaneamento de contas/cupons via IA:** Leitura e processamento de documentos (faturas, contas e recibos) via IA para extração do valor total, estabelecimento, data e categoria, sem separação de itens individuais.
+- **Métodos de Pagamento + Cartões + Estabelecimentos:** Seleção de forma de pagamento (Dinheiro, Pix, Crédito, Débito) nas transações, suporte para cadastrar cartões (sem dados confidenciais, apenas nome e dia do vencimento) associados às despesas e auto-salvamento automático de estabelecimentos na coleção de lojas.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)

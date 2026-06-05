@@ -1,4 +1,23 @@
 export type PaymentType = 'cash' | 'installment'
+export type PaymentMethod = 'cash' | 'pix' | 'credit_card' | 'debit_card'
+
+export interface Card {
+  id: string
+  name: string
+  type: 'credit' | 'debit'
+  due_day: number
+  owner: string
+  created: string
+  updated: string
+}
+
+export interface Store {
+  id: string
+  name: string
+  owner: string
+  created: string
+  updated: string
+}
 
 export interface Transaction {
   id: string
@@ -29,6 +48,8 @@ export interface Transaction {
   shared_with: string[]
   group: string
   tags: string[]
+  payment_method: PaymentMethod
+  card_id: string
 }
 
 export interface Group {
@@ -63,6 +84,8 @@ export interface TransactionCreate {
   shared_with?: string[]
   group?: string
   tags?: string[]
+  payment_method?: PaymentMethod
+  card_id?: string
 }
 
 export interface GroupCreate {

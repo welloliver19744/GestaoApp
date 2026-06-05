@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { pb } from '../api/client'
-import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon, MessageCircle, Plane } from 'lucide-react'
+import { Server, Save, Brain, Eye, EyeOff, RefreshCw, Bell, BellOff, Loader2, Sun, Moon, MessageCircle, Plane, CreditCard, Plus, Trash2 } from 'lucide-react'
 import { getAIConfig, saveAIConfig, DEFAULT_ENDPOINTS, type AIConfig } from '../lib/ai'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useTheme } from '../hooks/useTheme'
+import { useCards } from '../hooks/useCards'
 import { Mail } from 'lucide-react'
 
 const PROVIDERS = [
@@ -30,6 +31,10 @@ export function Settings() {
   const [saved, setSaved] = useState(false)
   const [discordWebhook, setDiscordWebhook] = useState(() => localStorage.getItem('gestaocasa_discord_webhook') || '')
   const [discordSaved, setDiscordSaved] = useState(false)
+
+  const { data: cardList, create: createCard, remove: removeCard } = useCards()
+  const [newCard, setNewCard] = useState({ name: '', type: 'credit' as 'credit' | 'debit', due_day: 1 })
+  const [addingCard, setAddingCard] = useState(false)
 
   const [travelConfig, setTravelConfig] = useState(() => {
     try {
@@ -494,6 +499,68 @@ export function Settings() {
                 Transações com a tag "Viagem" ou dentro do período configurado serão separadas do Dashboard principal e exibidas em um widget exclusivo.
               </p>
             </>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard size={18} className="text-neon-purple" />
+          <h2 className="text-sm font-semibold text-surface-200">Meus Cartões</h2>
+        </div>
+        <div className="space-y-3">
+          {cardList.length === 0 && <p className="text-sm text-surface-500">Nenhum cartão cadastrado.</p>}
+          {cardList.map(c => (
+            <div key={c.id} className="flex items-center justify-between py-2 border-b border-surface-800">
+              <div>
+                <p className="text-sm text-surface-100">{c.name}</p>
+                <p className="text-xs text-surface-500">{c.type === 'credit' ? 'Crédito' : 'Débito'}{c.due_day ? ` • venc. dia ${c.due_day}` : ''}</p>
+              </div>
+              <button onClick={() => removeCard(c.id)} className="text-surface-500 hover:text-neon-red transition-colors"><Trash2 size={14} /></button>
+            </div>
+          ))}
+          {addingCard ? (
+            <div className="space-y-2 pt-2">
+              <input
+                value={newCard.name}
+                onChange={e => setNewCard(p => ({ ...p, name: e.target.value }))}
+                placeholder="Nome do cartão (ex: Nubank, Inter)"
+                className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={newCard.type}
+                  onChange={e => setNewCard(p => ({ ...p, type: e.target.value as 'credit' | 'debit' }))}
+                  className="flex-1 h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+                >
+                  <option value="credit">Crédito</option>
+                  <option value="debit">Débito</option>
+                </select>
+                <input
+                  type="number" min={1} max={31}
+                  value={newCard.due_day}
+                  onChange={e => setNewCard(p => ({ ...p, due_day: parseInt(e.target.value) || 1 }))}
+                  placeholder="Dia venc."
+                  className="w-24 h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={async () => { if (!newCard.name.trim()) return; await createCard(newCard); setNewCard({ name: '', type: 'credit', due_day: 1 }); setAddingCard(false) }}
+                  className="flex-1"
+                >
+                  Salvar Cartão
+                </Button>
+                <Button variant="secondary" onClick={() => setAddingCard(false)}>Cancelar</Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingCard(true)}
+              className="flex items-center gap-2 text-sm text-neon-purple hover:text-neon-purple/80 transition-colors"
+            >
+              <Plus size={14} /> Adicionar cartão
+            </button>
           )}
         </div>
       </Card>

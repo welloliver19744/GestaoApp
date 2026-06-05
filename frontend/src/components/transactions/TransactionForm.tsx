@@ -3,12 +3,13 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useCategories } from '../../hooks/useCategories'
 import { useGroups } from '../../hooks/useGroups'
+import { useCards } from '../../hooks/useCards'
 import { scanBillWithAI, autoCategorize, getAIConfig } from '../../lib/ai'
 import { compressImage } from '../../lib/utils'
 import { scanBarcode, lookupBarcode } from '../../lib/barcode'
 import { pb, transactions as transactionsApi } from '../../api/client'
-import type { Transaction, PaymentType } from '../../api/types'
-import { Camera, Loader2, Wand2, X, Scan, Tags } from 'lucide-react'
+import type { Transaction, PaymentType, PaymentMethod } from '../../api/types'
+import { Camera, Loader2, Wand2, X, Scan, Tags, CreditCard, Banknote, Smartphone, Landmark } from 'lucide-react'
 import { PREDEFINED_TAGS, parseTags } from '../../lib/tags'
 
 interface TransactionFormProps {
@@ -32,6 +33,8 @@ export interface FormData {
   receiptFile?: File | null
   group?: string
   tags: string[]
+  payment_method: PaymentMethod
+  card_id: string
 }
 
 function emptyForm(): FormData {
@@ -49,12 +52,22 @@ function emptyForm(): FormData {
     receiptFile: null,
     group: '',
     tags: [],
+    payment_method: 'cash',
+    card_id: '',
   }
 }
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
+  { value: 'cash', label: 'Dinheiro', icon: <Banknote size={14} /> },
+  { value: 'pix', label: 'Pix', icon: <Smartphone size={14} /> },
+  { value: 'credit_card', label: 'Crédito', icon: <CreditCard size={14} /> },
+  { value: 'debit_card', label: 'Débito', icon: <Landmark size={14} /> },
+]
 
 export function TransactionForm({ open, onClose, onSubmit, initial }: TransactionFormProps) {
   const { data: categories } = useCategories()
   const { data: userGroups } = useGroups()
+  const { data: userCards } = useCards()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const aiConfig = getAIConfig()
 
@@ -74,6 +87,8 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       group: initial.group || '',
       tags: parseTags(initial.tags),
       receiptFile: null,
+      payment_method: (initial.payment_method as PaymentMethod) || 'cash',
+      card_id: initial.card_id || '',
     }
   })
   const [saving, setSaving] = useState(false)
@@ -168,7 +183,9 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         }))
       }
     } catch (e) {
-      alert('Erro ao escanear: ' + (e instanceof Error ? e.message : 'erro desconhecido'))
+      if (e instanceof Error && e.message !== 'cancelled') {
+        alert('Erro ao escanear: ' + e.message)
+      }
     } finally {
       setBarcoding(false)
     }
@@ -473,6 +490,44 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
             </div>
           </div>
         )}
+
+        <div>
+          <label className="block text-sm font-medium text-surface-300 mb-2">Forma de Pagamento</label>
+          <div className="flex gap-2 flex-wrap">
+            {PAYMENT_METHODS.map(m => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => { set('payment_method', m.value); if (m.value !== 'credit_card' && m.value !== 'debit_card') set('card_id', '') }}
+                className={`flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-medium transition-all ${
+                  form.payment_method === m.value
+                    ? 'bg-neon-purple text-surface-950 shadow-lg shadow-neon-purple/20'
+                    : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+                }`}
+              >
+                {m.icon}{m.label}
+              </button>
+            ))}
+          </div>
+          {(form.payment_method === 'credit_card' || form.payment_method === 'debit_card') && (
+            <div className="mt-2">
+              <select
+                value={form.card_id}
+                onChange={e => set('card_id', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+              >
+                <option value="">Selecione um cartão (opcional)</option>
+                {userCards
+                  .filter(c => form.payment_method === 'credit_card' ? c.type === 'credit' : c.type === 'debit')
+                  .map(c => <option key={c.id} value={c.id}>{c.name} {c.due_day ? `(venc. dia ${c.due_day})` : ''}</option>)
+                }
+              </select>
+              {userCards.filter(c => form.payment_method === 'credit_card' ? c.type === 'credit' : c.type === 'debit').length === 0 && (
+                <p className="text-xs text-surface-500 mt-1">Nenhum cartão cadastrado. Adicione em Configurações.</p>
+              )}
+            </div>
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-surface-300 mb-1">Observações</label>
