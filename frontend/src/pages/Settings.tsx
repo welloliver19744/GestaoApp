@@ -573,7 +573,17 @@ export function Settings() {
               </div>
               <div className="flex gap-2 pt-1">
                 <Button
-                  onClick={async () => { if (!newCard.name.trim()) return; const dueDayNum = Math.max(1, Math.min(31, parseInt(newCard.due_day) || 1)); await createCard({ ...newCard, due_day: dueDayNum }); setNewCard({ name: '', type: 'credit', due_day: '1' }); setAddingCard(false) }}
+                  onClick={async () => {
+                    if (!newCard.name.trim()) return
+                    const dueDayNum = Math.max(1, Math.min(31, parseInt(newCard.due_day) || 1))
+                    try {
+                      await createCard({ name: newCard.name, type: newCard.type, due_day: dueDayNum })
+                      setNewCard({ name: '', type: 'credit', due_day: '1' })
+                      setAddingCard(false)
+                    } catch (e) {
+                      alert('Erro ao salvar cartão: ' + (e instanceof Error ? e.message : String(e)))
+                    }
+                  }}
                   className="flex-1"
                 >
                   Salvar Cartão
