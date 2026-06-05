@@ -84,6 +84,9 @@ Todas as transações do mês selecionado, ordenadas por data.
 #### Escaneamento com IA
 Se tiver uma chave de API configurada, clique em "Scan" ao lado do campo descrição para fotografar uma conta. A IA lê os dados automaticamente.
 
+> [!IMPORTANT]
+> **Provedores Compatíveis:** Para usar o escaneamento de contas por imagem (OCR), o provedor e modelo de IA selecionados precisam ter suporte a visão/multimodalidade. O **Google Gemini** (grátis usando `gemini-1.5-flash`), **OpenAI** (usando `gpt-4o-mini`), **Anthropic** e **OpenRouter** (com modelos vision) são compatíveis. O **Groq** descontinuou modelos de visão em sua API e não pode ser utilizado para esta funcionalidade.
+
 #### Separação Inteligente de Itens (IA Avançada)
 Quando você escaneia um cupom fiscal (ex: supermercado, farmácia), a IA agora pode detectar múltiplos itens na mesma nota e sugerir como dividi-los em transações separadas por categoria.
 - Após o scan, você verá uma lista de itens detectados com suas categorias sugeridas
@@ -261,7 +264,7 @@ Configure para usar recursos de IA (scan de contas, auto-categorização, insigh
 | OpenAI | gpt-4o-mini | api.openai.com | ~$0.15/1M tokens |
 | Anthropic | claude-3-haiku | api.anthropic.com | ~$0.25/1M tokens |
 | OpenRouter | openai/gpt-4o-mini | openrouter.ai | Vários modelos/providers |
-| Groq | llama3-70b-8192 | api.groq.com | Grátis (rate limit) |
+| Groq | llama-3.3-70b-versatile | api.groq.com | Grátis (rate limit) |
 | DeepSeek | deepseek-chat | api.deepseek.com | ~$0.14/1M tokens |
 | Together AI | Mixtral-8x7B | api.together.xyz | ~$0.30/1M tokens |
 | Perplexity | sonar-pro | api.perplexity.ai | ~$0.20/1M tokens |
@@ -291,6 +294,15 @@ Para configurar, o administrador do servidor precisa:
 4. Clique em "Enviar teste" para confirmar.
 5. Para ativar no servidor, copie a URL para `scripts/discord-config.json` (veja `discord-config.example.json`).
 6. As notificações serão enviadas automaticamente às 08:08.
+
+### Meus Cartões
+Cadastre seus cartões de crédito e débito para associar às transações:
+1. Vá em **Configurações** → **Meus Cartões**.
+2. Clique em **"Adicionar cartão"**.
+3. Preencha o nome do cartão (ex: Nubank, Inter).
+4. Selecione o tipo (**Crédito** ou **Débito**).
+5. Se o tipo for **Crédito**, um campo adicional aparecerá para você informar o **Dia do Vencimento** da fatura.
+6. Clique em **"Salvar Cartão"**.
 
 ### Aparência
 Alternar entre tema escuro (padrão) e claro. A preferência fica salva no navegador.
