@@ -122,9 +122,10 @@ export function Settings() {
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState('')
 
-  const fetchModels = async (overrides?: { provider?: string; endpoint?: string; apiKey?: string }) => {
+  const fetchModels = async (overrides?: { provider?: string; endpoint?: string; apiKey?: string; model?: string }) => {
     const apiKey = overrides?.apiKey || aiConfig.apiKey
     const provider = overrides?.provider || aiConfig.provider
+    const currentModel = overrides?.model || aiConfig.model
     if (!apiKey) return
     setLoadingModels(true)
     setModelsError('')
@@ -152,7 +153,17 @@ export function Settings() {
       } else if (data.models) {
         list = data.models.map((m: any) => m.id || m.name)
       }
-      list = list.filter(Boolean).sort()
+      list = list.filter(Boolean)
+
+      const defaultModel = PROVIDERS.find(p => p.value === provider)?.model
+      if (defaultModel && !list.includes(defaultModel)) {
+        list.push(defaultModel)
+      }
+      if (currentModel && !list.includes(currentModel)) {
+        list.push(currentModel)
+      }
+
+      list.sort()
       if (list.length === 0) throw new Error('Nenhum modelo encontrado')
       setModels(list)
     } catch (e: any) {
@@ -171,7 +182,7 @@ export function Settings() {
       updateAI('provider', provider)
       updateAI('endpoint', p.endpoint)
       updateAI('model', p.model)
-      fetchModels({ provider, endpoint: p.endpoint })
+      fetchModels({ provider, endpoint: p.endpoint, model: p.model })
     } else {
       updateAI('provider', provider)
     }
@@ -274,19 +285,23 @@ export function Settings() {
                   placeholder="gpt-4o-mini"
                 />
               )}
-              {aiConfig.apiKey && (models ? (
-                <Button onClick={() => fetchModels()} disabled={loadingModels} variant="secondary">
-                  <RefreshCw size={16} className={loadingModels ? 'animate-spin' : ''} />
-                </Button>
-              ) : (
-                <Button onClick={() => fetchModels()} disabled={loadingModels}>
+              {aiConfig.apiKey && (
+                <Button
+                  onClick={() => fetchModels()}
+                  disabled={loadingModels}
+                  variant={models ? 'secondary' : 'primary'}
+                  className="px-3 min-w-[40px] flex items-center justify-center gap-1.5"
+                >
                   {loadingModels ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    'Buscar modelos'
+                    <>
+                      <RefreshCw size={16} />
+                      {!models && <span className="hidden sm:inline">Buscar modelos</span>}
+                    </>
                   )}
                 </Button>
-              ))}
+              )}
             </div>
             {modelsError && (
               <p className="text-xs text-neon-red mt-1">{modelsError}</p>
@@ -520,31 +535,45 @@ export function Settings() {
             </div>
           ))}
           {addingCard ? (
-            <div className="space-y-2 pt-2">
-              <input
-                value={newCard.name}
-                onChange={e => setNewCard(p => ({ ...p, name: e.target.value }))}
-                placeholder="Nome do cartão (ex: Nubank, Inter)"
-                className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
-              />
-              <div className="flex gap-2">
-                <select
-                  value={newCard.type}
-                  onChange={e => setNewCard(p => ({ ...p, type: e.target.value as 'credit' | 'debit' }))}
-                  className="flex-1 h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
-                >
-                  <option value="credit">Crédito</option>
-                  <option value="debit">Débito</option>
-                </select>
+            <div className="space-y-3 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-surface-300 mb-1">Nome do cartão</label>
                 <input
-                  type="number" min={1} max={31}
-                  value={newCard.due_day}
-                  onChange={e => setNewCard(p => ({ ...p, due_day: parseInt(e.target.value) || 1 }))}
-                  placeholder="Dia venc."
-                  className="w-24 h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+                  value={newCard.name}
+                  onChange={e => setNewCard(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Ex: Nubank, Inter"
+                  className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-surface-300 mb-1">Tipo</label>
+                  <select
+                    value={newCard.type}
+                    onChange={e => {
+                      const t = e.target.value as 'credit' | 'debit'
+                      setNewCard(p => ({ ...p, type: t, due_day: t === 'debit' ? 0 : p.due_day || 1 }))
+                    }}
+                    className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+                  >
+                    <option value="credit">Crédito</option>
+                    <option value="debit">Débito</option>
+                  </select>
+                </div>
+                {newCard.type === 'credit' && (
+                  <div>
+                    <label className="block text-xs font-medium text-surface-300 mb-1">Dia do Vencimento</label>
+                    <input
+                      type="number" min={1} max={31}
+                      value={newCard.due_day}
+                      onChange={e => setNewCard(p => ({ ...p, due_day: Math.max(1, Math.min(31, parseInt(e.target.value) || 1)) }))}
+                      placeholder="Dia"
+                      className="w-full h-9 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-purple/50 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
                 <Button
                   onClick={async () => { if (!newCard.name.trim()) return; await createCard(newCard); setNewCard({ name: '', type: 'credit', due_day: 1 }); setAddingCard(false) }}
                   className="flex-1"

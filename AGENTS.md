@@ -192,6 +192,7 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
 - **Escaneamento de contas/cupons via IA:** Leitura e processamento de documentos (faturas, contas e recibos) via IA para extração do valor total, estabelecimento, data e categoria, sem separação de itens individuais.
 - **Métodos de Pagamento + Cartões + Estabelecimentos:** Seleção de forma de pagamento (Dinheiro, Pix, Crédito, Débito) nas transações, suporte para cadastrar cartões (sem dados confidenciais, apenas nome e dia do vencimento) associados às despesas e auto-salvamento automático de estabelecimentos na coleção de lojas.
+- **Persistência de Modelos de IA e Ajustes Mobile:** Correção na lista de modelos de IA para garantir a presença do modelo atual e padrão do provedor mesmo que não retornados pela API (evitando sumir após reload). Botão de busca de modelos unificado e 100% responsivo para mobile (ocultando texto extenso em telas pequenas e deixando apenas o ícone). Formulário de cadastro de cartões com vencimento condicional ao tipo "Crédito" e labels explícitos de dia de vencimento.
 
 ## Ideias para Próximas Features
 - Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
