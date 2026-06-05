@@ -271,7 +271,7 @@ export function Settings() {
                 <select
                   value={aiConfig.model}
                   onChange={e => updateAI('model', e.target.value)}
-                  className="flex-1 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+                  className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm truncate"
                 >
                   {models.map(m => (
                     <option key={m} value={m}>{m}</option>
@@ -281,7 +281,7 @@ export function Settings() {
                 <input
                   value={aiConfig.model}
                   onChange={e => updateAI('model', e.target.value)}
-                  className="flex-1 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
+                  className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-surface-800 border border-surface-700 text-surface-100 placeholder-surface-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-sm"
                   placeholder="gpt-4o-mini"
                 />
               )}
