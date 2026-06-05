@@ -122,6 +122,20 @@
 - ShareModal integrado com grupo, schema SQLite corrigido
 - Descoberta: `$app.dao()` não existe no PB v0.39; campos são JSON em `_collections.fields`
 
+### 31. Métodos de Pagamento + Cartões + Estabelecimentos ✅
+- Seleção de forma de pagamento (Dinheiro/Pix/Crédito/Débito) nas transações
+- Cadastro de cartões (nome, tipo, vencimento) em Configurações
+- Auto-salvamento de estabelecimentos na coleção de lojas
+
+### 32. Fix Scanner IA (visão) ✅
+- Formato de imagem Anthropic corrigido, default Groq atualizado para vision-preview, erro amigável quando sem visão
+- Fix em barcode.ts com overlay fullscreen, câmera visível, linha animada e cancelar
+
+### 33. Persistência de Modelos de IA e Ajustes Mobile ✅
+- Presença de modelos na recarga garantindo o modelo atual e padrão na lista do select
+- Botão "Buscar modelos" compactado no celular (apenas ícone)
+- Cadastro de cartões com dia de vencimento condicional ao tipo crédito com labels explícitos
+
 ---
 
 ## Como dar manutenção

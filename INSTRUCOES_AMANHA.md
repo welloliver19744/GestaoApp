@@ -33,6 +33,9 @@
 28. Relatórios anuais (/reports, bar/line charts, top categorias, export)
 29. 12 provedores AI + busca automática de modelos (OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom)
 30. Contas familiares (groups collection, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema corrigido via SQLite direto)
+31. Métodos de Pagamento + Cartões + Estabelecimentos (Seleção nas transações, cadastro de cartões, auto-salvamento de lojas, schema SQLite)
+32. Fix Scanner IA e Câmera (formato Anthropic, Groq vision-preview, overlay fullscreen, linha animada de scan)
+33. Persistência de Modelos de IA e Ajustes Mobile (presença de modelos na recarga, botão compactado no mobile, dia de vencimento condicional para cartão de crédito)
 
 ### Extras
 - Busca automática de modelos AI (botão "Buscar modelos" + `<select>`)

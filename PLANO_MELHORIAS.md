@@ -220,6 +220,15 @@
 
 ---
 
+## 19. Persistência de Modelos de IA e Ajustes Mobile ✅
+
+**Status:** Implementado.
+- Correção na lista de modelos de IA para garantir a presença do modelo atual e padrão do provedor mesmo que não retornados pela API (evitando sumir após reload).
+- Botão de busca de modelos unificado e 100% responsivo para mobile (ocultando texto extenso em telas pequenas e deixando apenas o ícone).
+- Formulário de cadastro de cartões com vencimento condicional ao tipo "Crédito" e labels explícitos de dia de vencimento.
+
+---
+
 ## Próximo item sugerido
 
 Nenhum. Projeto funcionalmente completo. Apenas configuração SMTP manual pendente.
