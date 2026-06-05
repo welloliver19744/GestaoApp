@@ -205,17 +205,42 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
       console.log('[NFCe]', debug)
 
       let store = nfce.store
+      let total = nfce.total_amount
+      let date = nfce.purchase_date
+
+      // Try backend SEFAZ lookup if we have the access key
+      if (nfce.accessKey && nfce.accessKey.length >= 44) {
+        try {
+          const res = await fetch('/api/nfce/consulta', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessKey: nfce.accessKey }),
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.total_amount || data.purchase_date || data.store) {
+              total = data.total_amount || total
+              date = data.purchase_date || date
+              if (data.store && data.store.length > 8) store = data.store
+            }
+          }
+        } catch (_) {}
+      }
+
+      // CNPJ lookup fallback
       if (store && store.length === 14 && /^\d{14}$/.test(store)) {
-        const name = await lookupCNPJ(store)
-        if (name) store = name
+        try {
+          const name = await lookupCNPJ(store)
+          if (name) store = name
+        } catch (_) {}
       }
 
       setForm(prev => ({
         ...prev,
         description: store ? `Compra ${store}` : 'Compra NFC-e',
         store: store || prev.store,
-        purchase_date: nfce.purchase_date || prev.purchase_date,
-        total_amount: nfce.total_amount || prev.total_amount,
+        purchase_date: date || prev.purchase_date,
+        total_amount: total || prev.total_amount,
         notes: `[NFCe] ${debug}`,
       }))
     } catch (e) {
