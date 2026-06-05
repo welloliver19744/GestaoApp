@@ -82,17 +82,13 @@ Todas as transações do mês selecionado, ordenadas por data.
 5. Clique em "Criar".
 
 #### Escaneamento com IA
-Se tiver uma chave de API configurada, clique em "Scan" ao lado do campo descrição para fotografar uma conta. A IA lê os dados automaticamente.
+Se tiver uma chave de API configurada, clique em **"Scan"** ao lado do campo descrição para fotografar uma conta, nota fiscal ou cupom. A IA lê os dados automaticamente e preenche **valor, data, estabelecimento e categoria** nos campos do formulário.
 
 > [!IMPORTANT]
 > **Provedores Compatíveis:** Para usar o escaneamento de contas por imagem (OCR), o provedor e modelo de IA selecionados precisam ter suporte a visão/multimodalidade. O **Google Gemini** (grátis usando `gemini-1.5-flash`), **OpenAI** (usando `gpt-4o-mini`), **Anthropic** e **OpenRouter** (com modelos vision) são compatíveis. O **Groq** descontinuou modelos de visão em sua API e não pode ser utilizado para esta funcionalidade.
 
-#### Separação Inteligente de Itens (IA Avançada)
-Quando você escaneia um cupom fiscal (ex: supermercado, farmácia), a IA agora pode detectar múltiplos itens na mesma nota e sugerir como dividi-los em transações separadas por categoria.
-- Após o scan, você verá uma lista de itens detectados com suas categorias sugeridas
-- Selecione os itens que deseja incluir na transação atual
-- Cada item selecionado será convertido em uma transação individual (versão futura) ou você pode escolher o item principal para criar uma transação simples
-- Isso permite um controle mais preciso de gastos por categoria (ex: separar "alimentação" de "higiene" no mesmo recibo)
+> [!TIP]
+> O app aceita qualquer resposta da IA, mesmo que retorne os dados em português (`valor`, `vencimento`, `estabelecimento`) ou inglês (`amount`, `due_date`, `store`). Valores em formato `"R$ 1.234,56"` também são convertidos automaticamente.
 
 #### Escaneamento de Código de Barras
 Clique em **"Código"** ao lado do campo descrição para escanear um código de barras com a câmera. O app busca o nome do produto, marca e preço na Open Food Facts (gratuito, sem chave). Funciona no Chrome/Edge Android e desktop. Não funciona no iPhone Safari.

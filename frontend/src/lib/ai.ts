@@ -81,6 +81,26 @@ function extractJSON(text: string) {
   return JSON.parse(match[0])
 }
 
+function parseAmount(v: unknown): number {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const cleaned = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')
+    const n = parseFloat(cleaned)
+    return isNaN(n) ? 0 : n
+  }
+  return 0
+}
+
+function normalizeScannedJSON(raw: Record<string, unknown>) {
+  return {
+    description: (raw.description ?? raw.descricao ?? raw.desc ?? '') as string,
+    amount: parseAmount(raw.amount ?? raw.valor ?? raw.total ?? raw.value ?? 0),
+    due_date: (raw.due_date ?? raw.vencimento ?? raw.data ?? raw.date ?? '') as string,
+    category: (raw.category ?? raw.categoria ?? 'Outros') as string,
+    store: (raw.store ?? raw.estabelecimento ?? raw.empresa ?? raw.loja ?? '') as string,
+  }
+}
+
 export async function scanBillWithAI(imageBase64: string): Promise<{
   description: string
   amount: number
@@ -113,12 +133,13 @@ Responda APENAS o JSON, sem formatação ou texto extra.`;
   ], 300, 0.1);
 
   const parsed = extractJSON(content);
+  const normalized = normalizeScannedJSON(parsed);
   return {
-    description: parsed.description || 'Conta',
-    amount: parsed.amount || 0,
-    due_date: parsed.due_date || new Date().toISOString().slice(0, 10),
-    category: parsed.category || 'Outros',
-    store: parsed.store || '',
+    description: normalized.description || 'Conta',
+    amount: normalized.amount || 0,
+    due_date: normalized.due_date || new Date().toISOString().slice(0, 10),
+    category: normalized.category || 'Outros',
+    store: normalized.store || '',
   };
 }
 
