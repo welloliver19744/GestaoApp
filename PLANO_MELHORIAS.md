@@ -193,6 +193,33 @@
 
 ---
 
+---
+
+## 17. Métodos de Pagamento + Cartões + Estabelecimentos ✅
+
+**Status:** Implementado.
+- Seleção de forma de pagamento (Dinheiro, Pix, Crédito, Débito) com botões no `TransactionForm`
+- Quando Crédito/Débito selecionado, aparece select de cartões filtrado por tipo
+- Seção "Meus Cartões" em Configurações: cadastro de cartões (nome, tipo, dia de vencimento), sem dados sensíveis
+- Auto-salvamento de estabelecimentos na collection `stores` ao criar/editar transação
+- Novas collections: `cards` e `stores` via script Python SQLite (`scripts/add_payment_stores_cards.py`)
+- Colunas `payment_method` e `card_id` adicionadas à tabela `transactions`
+- Hook `useCards.ts` com CRUD para cartões do usuário
+
+---
+
+## 18. Correções de Scanner IA (visão) ✅
+
+**Status:** Implementado.
+- Formato de imagem corrigido para Anthropic: `{ type: 'image', source: { type: 'base64', ... } }`
+- Default Groq alterado de `llama3-70b-8192` para `llama-3.2-11b-vision-preview` (suporte a visão)
+- Mensagem de erro amigável quando modelo não suporta imagens
+- Fix em `barcode.ts`: overlay fullscreen com câmera visível, linha animada de scan, botão "Cancelar"
+- `safeUUID()` adicionado como fallback de `crypto.randomUUID()` em contexto HTTP
+- Corrigição em `toFormData` para serializar arrays como JSON string (campo `tags`)
+
+---
+
 ## Próximo item sugerido
 
 Nenhum. Projeto funcionalmente completo. Apenas configuração SMTP manual pendente.

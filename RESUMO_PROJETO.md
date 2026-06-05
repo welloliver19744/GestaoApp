@@ -74,5 +74,7 @@ O **Gestão Casa** é um PWA para controle financeiro doméstico que usa:
 | 29 | **Relatórios anuais** | Página /reports com gráficos e exportação |
 | 30 | **Contas familiares** | Grupos, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema SQLite direto |
 | | **Extra** | Busca automática de modelos AI (botão "Buscar modelos" no Settings) |
+| 31 | **Métodos de Pagamento + Cartões + Estabelecimentos** | Seleção de forma de pagamento (Dinheiro/Pix/Crédito/Débito) nas transações; cadastro de cartões (nome, tipo, vencimento) em Configurações; auto-salvamento de estabelecimentos na collection `stores`; colunas `payment_method` e `card_id` adicionadas via script Python SQLite |
+| 32 | **Fix Scanner IA (visão)** | Formato de imagem Anthropic corrigido (`source.base64`); default Groq atualizado para `llama-3.2-11b-vision-preview`; erro amigável quando modelo não suporta visão; fix em `barcode.ts` (overlay fullscreen, câmera visível, linha animada, botão cancelar) |
 | | **Descobertas** | `$app.dao()` não existe no PB v0.39; campos são JSON em `_collections.fields`; `new Field()` rejeita `_pb_users_auth_`; `crypto.randomUUID()` não disponível em cron |
 
