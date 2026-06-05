@@ -581,7 +581,9 @@ export function Settings() {
                       setNewCard({ name: '', type: 'credit', due_day: '1' })
                       setAddingCard(false)
                     } catch (e) {
-                      alert('Erro ao salvar cartão: ' + (e instanceof Error ? e.message : String(e)))
+                      const msg = e instanceof Error ? e.message : String(e)
+                      const data = (e as any)?.data ? JSON.stringify((e as any).data) : ''
+                      alert('Erro: ' + msg + (data ? '\n\n' + data : ''))
                     }
                   }}
                   className="flex-1"

@@ -25,7 +25,9 @@ export function useCards() {
   useEffect(() => { fetch() }, [fetch])
 
   const create = async (payload: { name: string; type: 'credit' | 'debit'; due_day: number }) => {
-    await cards.create({ ...payload, owner: pb.authStore.record?.id })
+    const owner = pb.authStore.record?.id
+    if (!owner) throw new Error('Usuário não autenticado')
+    await cards.create({ ...payload, owner })
     await fetch()
   }
 
