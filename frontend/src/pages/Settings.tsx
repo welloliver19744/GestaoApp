@@ -266,7 +266,7 @@ export function Settings() {
             <label className="block text-sm font-medium text-surface-300 mb-1.5">
               {selectedProvider?.label || 'Custom'} - Modelo
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {models ? (
                 <select
                   value={aiConfig.model}
@@ -290,7 +290,7 @@ export function Settings() {
                   onClick={() => fetchModels()}
                   disabled={loadingModels}
                   variant={models ? 'secondary' : 'primary'}
-                  className="px-3 min-w-[40px] flex items-center justify-center gap-1.5"
+                  className="px-3 min-w-[40px] flex items-center justify-center gap-1.5 shrink-0 w-10 sm:w-auto"
                 >
                   {loadingModels ? (
                     <Loader2 size={16} className="animate-spin" />
