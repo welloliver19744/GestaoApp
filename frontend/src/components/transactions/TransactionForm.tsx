@@ -138,7 +138,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const handleScan = async (file: File) => {
     setScanning(true)
     try {
-      const compressed = await compressImage(file, 2000, 0.92)
+      const compressed = await compressImage(file, 2600, 0.95)
       const result = await scanBillWithAI(compressed.base64)
       
       const matchedCat = categories.find(c =>

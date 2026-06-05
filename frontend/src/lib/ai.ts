@@ -136,22 +136,25 @@ export async function scanBillWithAI(imageBase64: string): Promise<{
   store: string
   rawResponse: string
 }> {
-  const prompt = `Você é um especialista em ler notas fiscais e cupons brasileiros.
+  const prompt = `Você é um especialista em OCR de notas fiscais e cupons brasileiros. Leia TODOS os campos da imagem com atenção.
 
-Analise a imagem e extraia SOMENTE o JSON abaixo, sem texto extra, sem markdown.
+Extraia APENAS o JSON abaixo, sem texto extra, sem markdown.
 
 {
-  "description": "descricao curta (ex: Supermercado Assai, Conta de Luz, Fatura Netflix)",
+  "description": "nome curto (ex: Supermercado Assai, Conta Luz, Fatura Netflix)",
   "amount": 0.00,
   "purchase_date": "YYYY-MM-DD",
   "category": "Alimentacao | Transporte | Moradia | Saude | Educacao | Lazer | Assinaturas | Servicos | Salario | Outros",
   "store": "nome do estabelecimento"
 }
 
-REGRAS:
-- "amount" é SOMENTE o ultimo valor do cupom após "TOTAL", "TOTAL R$", "VALOR TOTAL", "TOTAL A PAGAR", "TOTAL GERAL". NUNCA pegue valor de item individual.
-- Se não achar um campo, use "" (string) ou 0 (number).
-- Responda APENAS o JSON puro.`
+INSTRUCOES OBRIGATORIAS:
+- "amount" eh o ULTIMO valor numerico do cupom, SEMPRE apos as palavras TOTAL, TOTAL R$, TOTAL A PAGAR, VALOR TOTAL ou TOTAL GERAL. NUNCA use preco de item individual.
+- "store" eh o nome do estabelecimento — geralmente na primeira linha do cupom.
+- "purchase_date" eh a data de emissao no formato YYYY-MM-DD.
+- "description" eh um resumo curto (ex: "Supermercado Extra", "Farmacia Sao Joao").
+- "category" escolha UMA baseada no tipo de compra.
+- Se tiver duvida, de seu MELHOR PALPITE. NAO deixe campos vazios.`
 
   const cfg = getAIConfig()
   const isAnthropic = cfg.provider === 'anthropic'
