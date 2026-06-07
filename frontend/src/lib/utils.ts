@@ -1,3 +1,5 @@
+import { parseISO } from 'date-fns'
+
 export const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP', 'ARS', 'CLP'] as const
 export type CurrencyCode = typeof CURRENCIES[number]
 
@@ -22,14 +24,16 @@ export function formatCurrency(value: number, currency = 'BRL'): string {
 }
 
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('pt-BR').format(new Date(date))
+  const d = typeof date === 'string' ? parseISO(date) : date
+  return new Intl.DateTimeFormat('pt-BR').format(d)
 }
 
 export function formatMonthYear(date: string | Date): string {
+  const d = typeof date === 'string' ? parseISO(date) : date
   return new Intl.DateTimeFormat('pt-BR', {
     month: 'long',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(d)
 }
 
 export function cn(...classes: (string | false | undefined | null)[]): string {
