@@ -272,3 +272,18 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Backup file:** `/tmp/data.db.bak4` (data.db pré-fix).
 - **Pattern confirmado:** Qualquer campo `relation` em collection SQL-direct deve ser `text` no PB v0.39. Solução alternativa (hooks CRUD) é frágil e difícil de debugar.
 - **Commit:** fix `paid_by: relation → text` + revert rawPatch/rawDelete.
+
+## Session Log 2026-06-07 (fixes pos-deploy)
+- **Bug categorias sumindo:** `useCategories.ts` engolia erro do `getFullList()` silenciosamente. Adicionado fallback `getList(1,200)`.
+- **Bug stores auto-save:** `useTransactions.ts` enviava `Authorization` sem prefixo `Bearer`. Hooks `stores_crud.pb.js` rejeitavam com "auth required". Adicionado `Bearer ` nas 2 ocorrências.
+- **Bug cards "auth required":** Token expirado não era refrescado antes das chamadas aos hooks. Adicionado `authRefresh()` + `ensureToken()` em `useCards.ts`.
+- **PWA cache stale:** SW cacheava `/api/cards/list` com resposta velha. Adicionado `invalidateApiCache` + cache-bust `_=${Date.now()}` no fetch.
+- **Cloudflare cache:** Domínio `contas.housecloud.tec.br` passava por Cloudflare tunnel que cacheava assets. Solução: purgar cache do Cloudflare (Purge Everything).
+- **Commits:** `9493861` (fixes auth/cache) + `50709db` (card due_day calc).
+
+## Session Log 2026-06-07 (card due_day + fuso horário)
+- **Card due_day no crédito:** Nova lógica em `useTransactions.ts create()` que usa `card_due_day` do cartão para calcular vencimento de parcelas. Compra dia 5, cartão vence dia 15 → 1ª parcela dia 15/mês+1. Compra após due_day → pula um mês.
+- **Débito/à vista sem "Vence":** `TransactionCard.tsx` — débito/cash/pix mostra "Pago em {data}" em vez de "Vence {data}".
+- **Dashboard + Transactions:** `handleCreate` atualizados para passar `card_due_day`, `payment_method`, `card_id` para o `create()`.
+- **Bug fuso horário `formatDate`:** `new Date('2026-07-07')` no Chrome é UTC meia-noite. Em UTC-3 (Brasil), vira dia anterior. Substituído por `parseISO` do `date-fns` que lida com timezone corretamente.
+- **Commits:** `780fbc0` (formatDate parseISO fix).
