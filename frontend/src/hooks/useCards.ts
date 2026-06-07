@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { pb } from '../api/client'
 import type { Card } from '../api/types'
+import { invalidateApiCache } from '../lib/swCache'
 
 function getBaseUrl(): string {
   const envUrl = import.meta.env.VITE_POCKETBASE_URL
@@ -12,11 +13,23 @@ export function useCards() {
   const [data, setData] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
 
+  const ensureToken = async (): Promise<string> => {
+    if (pb.authStore.token) {
+      try {
+        await pb.collection('users').authRefresh()
+      } catch {}
+    }
+    if (!pb.authStore.token) throw new Error('Usuário não autenticado')
+    return pb.authStore.token
+  }
+
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const token = pb.authStore.token
-      const res = await window.fetch(`${getBaseUrl()}/api/cards/list`, {
+      const token = await ensureToken().catch(() => '')
+      if (!token) { setLoading(false); return }
+      await invalidateApiCache('/api/cards/list')
+      const res = await window.fetch(`${getBaseUrl()}/api/cards/list?_=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
       if (!res.ok) {
@@ -37,7 +50,7 @@ export function useCards() {
   const create = async (payload: { name: string; type: 'credit' | 'debit'; due_day: number }) => {
     const owner = pb.authStore.record?.id
     if (!owner) throw new Error('Usuário não autenticado')
-    const token = pb.authStore.token
+    const token = await ensureToken()
     const res = await window.fetch(`${getBaseUrl()}/api/cards/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -47,11 +60,12 @@ export function useCards() {
       const err = await res.json()
       throw new Error(err.error || 'Falha ao criar cartão')
     }
+    await invalidateApiCache('/api/cards/')
     await fetch()
   }
 
   const remove = async (id: string) => {
-    const token = pb.authStore.token
+    const token = await ensureToken()
     const res = await window.fetch(`${getBaseUrl()}/api/cards/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -61,6 +75,7 @@ export function useCards() {
       const err = await res.json()
       throw new Error(err.error || 'Falha ao excluir cartão')
     }
+    await invalidateApiCache('/api/cards/')
     await fetch()
   }
 

@@ -128,7 +128,7 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       try {
         await windowFetch(`${typeof window !== 'undefined' ? window.location.origin : ''}/api/stores/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}) },
+          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: `Bearer ${pb.authStore.token}` } : {}) },
           body: JSON.stringify({ name: payload.store, owner: pb.authStore.record?.id }),
         })
       } catch {}
@@ -149,7 +149,7 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       try {
         await windowFetch(`${typeof window !== 'undefined' ? window.location.origin : ''}/api/stores/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}) },
+          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: `Bearer ${pb.authStore.token}` } : {}) },
           body: JSON.stringify({ name: payload.store, owner: pb.authStore.record?.id }),
         })
       } catch {}
