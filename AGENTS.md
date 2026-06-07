@@ -292,4 +292,9 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Bug crítico pós-login:** App abre tela de login, autentica, mostra Dashboard por ~1s e some (tela branca). Causa: `formatDate`/`formatMonthYear` em `lib/utils.ts` usavam `parseISO` (date-fns) que interpretava strings ISO com `Z` (UTC) como meia-noite UTC → em UTC-3 (Brasil) vira dia anterior. Ao trocar pra parse manual (`split('T')[0]`), strings malformadas/undefined/empty causavam `new Date(NaN)` → `Intl.DateTimeFormat.format()` lança `RangeError` no Firefox/edge cases → React error boundary não pega → app todo desmonta.
 - **Fix:** `toLocalDate()` defensivo em `utils.ts`: valida string, checa `parts.length===3`, `!isNaN`, fallback `new Date()` se inválido; `formatDate`/`formatMonthYear` envolvidos em `try/catch` com fallback string.
 - **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário (PWA cache).
+- **Commits:** `5d29e08` (defensive date parsing fix).
+
+## Session Log 2026-06-08 (continuação)
+- **Dashboard grouped installments:** Lista de "Próximos vencimentos" mostrava todas as parcelas individuais (ex: 12x = 12 linhas). Implementado agrupamento igual à página Transactions: `grouped` useMemo em `Dashboard.tsx` agrupa `unpaid` por `group_id`; `TransactionCard` ganha props `compact` + `override` (description, dueDate, amount). Dashboard renderiza 1 linha por compra com badge "X/Y pagas", valor total, próxima a vencer; `<details>` expansível mostra parcelas individuais compactas. Zero breaking changes — apenas display.
+- **Deploy:** Build + scp + chmod + docker restart. Hard refresh.
 - **Commits:** pending push.

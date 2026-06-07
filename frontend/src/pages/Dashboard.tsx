@@ -15,6 +15,16 @@ import { useToast } from '../components/ui/Toast'
 import { formatCurrency, formatMonthYear, txInMonth } from '../lib/utils'
 import { generateInsights, getAIConfig } from '../lib/ai'
 import type { Transaction } from '../api/types'
+
+interface PurchaseGroup {
+  key: string
+  representative: Transaction
+  installments: Transaction[]
+  isInstallment: boolean
+  paidCount: number
+  totalCount: number
+  nextDue: Transaction | null
+}
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { TrendingUp, Wallet, Plus, ChevronLeft, ChevronRight, X, Brain, MessageSquare, Loader2, Sparkles, BarChart3, Target, TrendingDown, Plane, Store, ChevronDown } from 'lucide-react'
 import { parseTags } from '../lib/tags'
@@ -99,6 +109,25 @@ export function Dashboard() {
   const unpaid = regularFiltered.filter(tx => !tx.paid)
   const totalPending = unpaid.reduce((acc, tx) => acc + tx.installment_value, 0)
   const totalPaid = regularFiltered.filter(tx => tx.paid).reduce((acc, tx) => acc + tx.installment_value, 0)
+
+  const grouped = useMemo<PurchaseGroup[]>(() => {
+    const map = new Map<string, Transaction[]>()
+    for (const tx of unpaid) {
+      const key = tx.group_id || `single:${tx.id}`
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(tx)
+    }
+    const result: PurchaseGroup[] = []
+    for (const [key, txs] of map) {
+      txs.sort((a, b) => a.due_date.localeCompare(b.due_date))
+      const rep = txs[0]
+      const isInst = txs.length > 1 || rep.payment_type === 'installment'
+      const paid = txs.filter(t => t.paid).length
+      const next = txs.find(t => !t.paid) || null
+      result.push({ key, representative: rep, installments: txs, isInstallment: isInst, paidCount: paid, totalCount: txs.length, nextDue: next })
+    }
+    return result.sort((a, b) => a.representative.due_date.localeCompare(b.representative.due_date))
+  }, [unpaid])
 
   const byCategory = useMemo(() => {
     const map = new Map<string, number>()
@@ -642,8 +671,31 @@ export function Dashboard() {
             ) : unpaid.length === 0 ? (
               <Card><p className="text-surface-400 text-sm text-center py-4">Nada pendente neste mês 🎉</p></Card>
             ) : (
-              unpaid.slice(0, 10).map(tx => (
-                <TransactionCard key={tx.id} transaction={tx} onTogglePaid={handleTogglePaid} />
+              grouped.slice(0, 10).map(g => (
+                <div key={g.key} className="space-y-2">
+                  <TransactionCard
+                    transaction={g.representative}
+                    onTogglePaid={handleTogglePaid}
+                    override={{
+                      description: g.isInstallment ? `${g.representative.description} (${g.paidCount}/${g.totalCount})` : undefined,
+                      dueDate: g.nextDue?.due_date,
+                      amount: g.isInstallment ? g.installments.reduce((s, t) => s + t.installment_value, 0) : undefined,
+                    }}
+                  />
+                  {g.isInstallment && g.totalCount > 1 && (
+                    <details className="ml-4 mt-1 border-l border-surface-700 pl-3 space-y-1">
+                      <summary className="text-xs text-surface-500 cursor-pointer select-none">Ver {g.totalCount} parcelas</summary>
+                      {g.installments.map(tx => (
+                        <TransactionCard
+                          key={tx.id}
+                          transaction={tx}
+                          onTogglePaid={handleTogglePaid}
+                          compact
+                        />
+                      ))}
+                    </details>
+                  )}
+                </div>
               ))
             )}
           </div>

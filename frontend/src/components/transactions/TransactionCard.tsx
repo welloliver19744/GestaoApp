@@ -16,9 +16,15 @@ interface TransactionCardProps {
   onDelete?: (tx: Transaction) => void
   selected?: boolean
   onSelect?: (id: string) => void
+  compact?: boolean
+  override?: {
+    description?: string
+    dueDate?: string
+    amount?: number
+  }
 }
 
-export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelete, selected, onSelect }: TransactionCardProps) {
+export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelete, selected, onSelect, compact, override }: TransactionCardProps) {
   const { getLabel } = useCategories()
   const isInstallment = tx.payment_type === 'installment'
   const [showReceipt, setShowReceipt] = useState(false)
@@ -36,10 +42,16 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
     ? pb.files.getUrl(tx, tx.receipt)
     : null
 
+  const desc = override?.description ?? tx.description
+  const dueDate = override?.dueDate ?? tx.due_date
+  const amount = override?.amount ?? tx.installment_value
+  const totalAmount = override?.amount ? tx.total_amount : tx.total_amount
+  const isPaid = tx.paid
+
   return (
     <>
-      <Card className="flex items-center gap-4 group">
-        {onSelect && (
+      <Card className={`flex items-center gap-4 group ${compact ? 'p-2' : 'p-4'}`}>
+        {onSelect && !compact && (
           <button onClick={() => onSelect(tx.id)} className="shrink-0 text-surface-500 hover:text-surface-200 transition-colors" title="Selecionar para ações em massa">
             {selected ? <CheckSquare size={20} className="text-neon-cyan" /> : <Square size={20} />}
           </button>
@@ -53,47 +65,50 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={`font-medium truncate ${tx.paid ? 'text-surface-500 line-through' : 'text-surface-100'}`}>
-              {tx.description}
+            <span className={`font-medium truncate ${isPaid ? 'text-surface-500 line-through' : 'text-surface-100'}`}>
+              {desc}
             </span>
-            {isInstallment && (
+            {isInstallment && !compact && (
               <span className="shrink-0 text-xs bg-surface-800 text-neon-cyan px-2 py-0.5 rounded-full font-mono">
                 {tx.installment_number}/{tx.installment_count}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
-            <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
-            {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
-            {tx.payment_method === 'debit_card' || tx.payment_method === 'cash' || tx.payment_method === 'pix' ? (
-              <span className="flex items-center gap-1 text-neon-green"><CheckCircle2 size={12} />Pago em {formatDate(tx.purchase_date)}</span>
-            ) : (
-              <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(tx.due_date)}</span>
-            )}
-            {parseTags(tx.tags).length > 0 && (
-              <span className="flex items-center gap-1 flex-wrap">
-                {parseTags(tx.tags).map(t => {
-                  const def = getTagDef(t)
-                  return <span key={t} className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${def.color} ${def.bg}`}>{def.label}</span>
-                })}
-              </span>
-            )}
-            {isShared && (
-              <span className="flex items-center gap-1 text-neon-cyan">
-                <Share2 size={12} />Compartilhado
-              </span>
-            )}
-          </div>
+          {!compact && (
+            <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
+              <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
+              {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
+              {tx.payment_method === 'debit_card' || tx.payment_method === 'cash' || tx.payment_method === 'pix' ? (
+                <span className="flex items-center gap-1 text-neon-green"><CheckCircle2 size={12} />Pago em {formatDate(tx.purchase_date)}</span>
+              ) : (
+                <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(dueDate)}</span>
+              )}
+              {parseTags(tx.tags).length > 0 && (
+                <span className="flex items-center gap-1 flex-wrap">
+                  {parseTags(tx.tags).map(t => {
+                    const def = getTagDef(t)
+                    return <span key={t} className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${def.color} ${def.bg}`}>{def.label}</span>
+                  })}
+                </span>
+              )}
+              {isShared && (
+                <span className="flex items-center gap-1 text-neon-cyan">
+                  <Share2 size={12} />Compartilhado
+                </span>
+              )}
+            </div>
+          )}
+
         </div>
 
         <div className="shrink-0 text-right flex items-center gap-2">
           <div>
-            <p className={`text-sm sm:text-base font-semibold ${tx.paid ? 'text-surface-500' : 'text-surface-100'}`}>
-              {formatCurrency(tx.installment_value, tx.currency)}
+            <p className={`text-sm sm:text-base font-semibold ${isPaid ? 'text-surface-500' : 'text-surface-100'}`}>
+              {formatCurrency(amount, tx.currency)}
             </p>
-            {isInstallment && (
-              <p className="text-xs text-surface-500">Total: {formatCurrency(tx.total_amount, tx.currency)}</p>
+            {isInstallment && !compact && (
+              <p className="text-xs text-surface-500">Total: {formatCurrency(totalAmount, tx.currency)}</p>
             )}
           </div>
           <div className="shrink-0 flex items-center">
