@@ -5,37 +5,6 @@ import { invalidateApiCache } from '../lib/swCache'
 
 const windowFetch: typeof fetch = (...args) => fetch(...args)
 
-export async function rawPatch(id: string, data: Record<string, unknown>) {
-  const clean: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(data)) {
-    if (v !== undefined && v !== null && v !== '') clean[k] = v
-  }
-  const url = pb.buildURL(`/api/collections/transactions/records/${id}`)
-  const res = await windowFetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': pb.authStore.token || '',
-    },
-    body: JSON.stringify(clean),
-  })
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw { data: body.data || {}, response: body, message: body.message || 'Error', status: res.status }
-  return body
-}
-
-export async function rawDelete(id: string) {
-  const url = pb.buildURL(`/api/collections/transactions/records/${id}`)
-  const res = await windowFetch(url, {
-    method: 'DELETE',
-    headers: { 'Authorization': pb.authStore.token || '' },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw { data: body.data || {}, response: body, message: body.message || 'Error', status: res.status }
-  }
-}
-
 async function pbCreate(data: Record<string, unknown>) {
   const clean: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(data)) {
@@ -190,16 +159,16 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
   const remove = async (tx: Transaction) => {
     if (tx.group_id) {
       const siblings = await transactions.getList(1, 200, { filter: `group_id='${tx.group_id}'` })
-      await Promise.all(siblings.items.map(s => rawDelete(s.id)))
+      await Promise.all(siblings.items.map(s => transactions.delete(s.id)))
     } else {
-      await rawDelete(tx.id)
+      await transactions.delete(tx.id)
     }
     await invalidateApiCache('/api/collections/transactions')
     await fetch()
   }
 
   const togglePaid = async (tx: Transaction) => {
-    await rawPatch(tx.id, {
+    await transactions.update(tx.id, {
       paid: !tx.paid,
       paid_at: !tx.paid ? new Date().toISOString() : null,
       paid_by: !tx.paid ? pb.authStore.record?.id : null,
@@ -208,5 +177,5 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
     await fetch()
   }
 
-  return { data, loading, refetch: fetch, create, update, remove, togglePaid, rawPatch, rawDelete }
+  return { data, loading, refetch: fetch, create, update, remove, togglePaid }
 }

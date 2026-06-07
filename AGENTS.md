@@ -261,3 +261,14 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **NFC-e SEFAZ fix:** `nfce_consulta.pb.js` usa `c.requestInfo().query.url` (lowercase) — `c.Request()` não existe em PB v0.39. `$http.send().body` é byte array, convertido com `String.fromCharCode`.
 - **Backup files:** `/tmp/data.db.bak`, `/tmp/data.db.bak2` (backups manuais das correções SQL).
 - **Commits da sessão:** `23e69ce` (fixes principais) + `55537a7` (mobile overflow v1) + `21b1c65` (modal centralizado + autoUpdate).
+
+## Session Log 2026-06-07 (continuação)
+- **Bug raíz encontrado:** PATCH e DELETE em `/api/collections/transactions/records/{id}` retornavam 400 (`validation_missing_rel_records`) quando payload continha `paid_by` (campo `relation` → users). Mesmo problema do `category` em 2026-06-05. PB v0.39 falha na validação interna de relations em coleções SQL-direct durante save/update.
+- **Investigação de hook bypass:** Tentado criar `transactions_update.pb.js` com `routerAdd('PATCH', '/api/tx/update', ...)` usando `$app.save()` direto. **Falhou** — paths `/api/tx/update`, `/api/tx/patch`, `/api/transactions/update` retornavam 400 vazio sem aparecer nos logs. Paths como `/api/tx/update_transaction` e `/api/ping2` funcionavam normalmente. Causa não identificada (possível quirk de hot-reload do Goja ou cache de rotas). Removido o hook após fix do schema.
+- **Fix definitivo:** Campo `paid_by` mudado de `relation` → `text` via `scripts/fix_paid_by_text.py` (mesmo padrão do `category`). **Importante:** container PB precisa estar **parado** antes de modificar o data.db no bind mount, senão o PB sobrescreve as mudanças em memória. Ordem correta: `docker stop` → `python3 fix_paid_by_text.py` → `docker start`.
+- **Frontend revertido:** `rawPatch`/`rawDelete` removidos de `useTransactions.ts` e `Transactions.tsx`. Voltou a usar `transactionsApi.update()` e `transactionsApi.delete()` (SDK normal). Variável local `transactions` (sombra) renomeada para `transactionsApi` (RecordService) no import do `api/client`.
+- **Validação:** PATCH com `{"paid":true,"paid_by":"jnb6pa2dkd8eei6"}` → 200. DELETE → 200. Frontend deployado.
+- **User record:** email correto é `welloliver@gmail.com` (não `welloliver19744@gmail.com`). ID continua `jnb6pa2dkd8eei6`.
+- **Backup file:** `/tmp/data.db.bak4` (data.db pré-fix).
+- **Pattern confirmado:** Qualquer campo `relation` em collection SQL-direct deve ser `text` no PB v0.39. Solução alternativa (hooks CRUD) é frágil e difícil de debugar.
+- **Commit:** fix `paid_by: relation → text` + revert rawPatch/rawDelete.

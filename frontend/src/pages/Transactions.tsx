@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useTransactions, rawPatch, rawDelete } from '../hooks/useTransactions'
+import { useTransactions } from '../hooks/useTransactions'
 import { TransactionCard } from '../components/transactions/TransactionCard'
 import { TransactionForm } from '../components/transactions/TransactionForm'
 import { GroupSelector } from '../components/groups/GroupSelector'
@@ -15,7 +15,7 @@ import { formatMonthYear, txInMonth, formatDate, formatCurrency } from '../lib/u
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
 import type { Category } from '../api/types'
-import { pb, categories as categoriesApi } from '../api/client'
+import { pb, categories as categoriesApi, transactions as transactionsApi } from '../api/client'
 
 
 export function Transactions() {
@@ -252,7 +252,7 @@ export function Transactions() {
     if (selected.size === 0) return
     if (!confirm(`Excluir ${selected.size} transação(ões)?`)) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawDelete(tx.id)))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.delete(tx.id)))
       toast(`${selected.size} transação(ões) excluída(s)`, 'success')
       setSelected(new Set())
     } catch {
@@ -263,7 +263,7 @@ export function Transactions() {
   const handleBulkTogglePaid = async (paid: boolean) => {
     if (selected.size === 0) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawPatch(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.update(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
       toast(`${selected.size} transação(ões) ${paid ? 'pagas' : 'pendentes'}`, 'success')
       setSelected(new Set())
     } catch {
@@ -274,7 +274,7 @@ export function Transactions() {
   const handleBulkCategory = async () => {
     if (!bulkCategory || selected.size === 0) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawPatch(tx.id, { category: bulkCategory })))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.update(tx.id, { category: bulkCategory })))
       toast(`Categoria alterada em ${selected.size} transação(ões)`, 'success')
       setSelected(new Set())
       setBulkCategory('')
