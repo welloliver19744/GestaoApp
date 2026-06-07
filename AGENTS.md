@@ -287,3 +287,9 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Dashboard + Transactions:** `handleCreate` atualizados para passar `card_due_day`, `payment_method`, `card_id` para o `create()`.
 - **Bug fuso horário `formatDate`:** `new Date('2026-07-07')` no Chrome é UTC meia-noite. Em UTC-3 (Brasil), vira dia anterior. Substituído por `parseISO` do `date-fns` que lida com timezone corretamente.
 - **Commits:** `780fbc0` (formatDate parseISO fix).
+
+## Session Log 2026-06-08
+- **Bug crítico pós-login:** App abre tela de login, autentica, mostra Dashboard por ~1s e some (tela branca). Causa: `formatDate`/`formatMonthYear` em `lib/utils.ts` usavam `parseISO` (date-fns) que interpretava strings ISO com `Z` (UTC) como meia-noite UTC → em UTC-3 (Brasil) vira dia anterior. Ao trocar pra parse manual (`split('T')[0]`), strings malformadas/undefined/empty causavam `new Date(NaN)` → `Intl.DateTimeFormat.format()` lança `RangeError` no Firefox/edge cases → React error boundary não pega → app todo desmonta.
+- **Fix:** `toLocalDate()` defensivo em `utils.ts`: valida string, checa `parts.length===3`, `!isNaN`, fallback `new Date()` se inválido; `formatDate`/`formatMonthYear` envolvidos em `try/catch` com fallback string.
+- **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário (PWA cache).
+- **Commits:** pending push.

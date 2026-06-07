@@ -16,10 +16,11 @@ import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
 import type { Category } from '../api/types'
 import { pb, categories as categoriesApi, transactions as transactionsApi } from '../api/client'
+import { invalidateApiCache } from '../lib/swCache'
 
 
 export function Transactions() {
-  const { data: transactions, loading, togglePaid, create, update, remove } = useTransactions({ sort: '-purchase_date' })
+  const { data: transactions, loading, togglePaid, create, update, remove, refetch } = useTransactions({ sort: '-purchase_date' })
   const { toast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
@@ -254,6 +255,8 @@ export function Transactions() {
     if (!confirm(`Excluir ${selected.size} transação(ões)?`)) return
     try {
       await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.delete(tx.id)))
+      await invalidateApiCache('/api/collections/transactions')
+      await refetch()
       toast(`${selected.size} transação(ões) excluída(s)`, 'success')
       setSelected(new Set())
     } catch {
@@ -265,6 +268,8 @@ export function Transactions() {
     if (selected.size === 0) return
     try {
       await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.update(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
+      await invalidateApiCache('/api/collections/transactions')
+      await refetch()
       toast(`${selected.size} transação(ões) ${paid ? 'pagas' : 'pendentes'}`, 'success')
       setSelected(new Set())
     } catch {
@@ -276,6 +281,8 @@ export function Transactions() {
     if (!bulkCategory || selected.size === 0) return
     try {
       await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => transactionsApi.update(tx.id, { category: bulkCategory })))
+      await invalidateApiCache('/api/collections/transactions')
+      await refetch()
       toast(`Categoria alterada em ${selected.size} transação(ões)`, 'success')
       setSelected(new Set())
       setBulkCategory('')

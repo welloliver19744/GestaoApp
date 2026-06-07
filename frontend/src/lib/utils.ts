@@ -1,5 +1,3 @@
-import { parseISO } from 'date-fns'
-
 export const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP', 'ARS', 'CLP'] as const
 export type CurrencyCode = typeof CURRENCIES[number]
 
@@ -23,17 +21,38 @@ export function formatCurrency(value: number, currency = 'BRL'): string {
   }
 }
 
+function toLocalDate(date: string | Date): Date {
+  if (typeof date === 'string' && date) {
+    try {
+      const datePart = date.split('T')[0]
+      const parts = datePart.split('-').map(Number)
+      if (parts.length === 3 && parts.every(n => !isNaN(n))) {
+        const [y, m, d] = parts
+        return new Date(y, m - 1, d)
+      }
+    } catch {}
+  }
+  if (date instanceof Date && !isNaN(date.getTime())) return date
+  return new Date()
+}
+
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date
-  return new Intl.DateTimeFormat('pt-BR').format(d)
+  try {
+    return new Intl.DateTimeFormat('pt-BR').format(toLocalDate(date))
+  } catch {
+    return 'Data inválida'
+  }
 }
 
 export function formatMonthYear(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date
-  return new Intl.DateTimeFormat('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  }).format(d)
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric',
+    }).format(toLocalDate(date))
+  } catch {
+    return 'Mês inválido'
+  }
 }
 
 export function cn(...classes: (string | false | undefined | null)[]): string {
