@@ -36,6 +36,7 @@ export interface FormData {
   tags: string[]
   payment_method: PaymentMethod
   card_id: string
+  card_due_day?: number
 }
 
 function emptyForm(): FormData {
@@ -256,9 +257,12 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    const cardDueDay = form.card_id && form.payment_method === 'credit_card'
+      ? userCards.find(c => c.id === form.card_id)?.due_day
+      : undefined
     try {
-      console.log('[FORM_SUBMIT] payload:', JSON.stringify({ description: form.description, store: form.store, total_amount: form.total_amount, purchase_date: form.purchase_date, payment_type: form.payment_type, payment_method: form.payment_method, currency: form.currency, category: form.category, tags: form.tags, hasReceipt: !!form.receiptFile }))
-      await onSubmit(form)
+      console.log('[FORM_SUBMIT] payload:', JSON.stringify({ description: form.description, store: form.store, total_amount: form.total_amount, purchase_date: form.purchase_date, payment_type: form.payment_type, payment_method: form.payment_method, currency: form.currency, category: form.category, tags: form.tags, hasReceipt: !!form.receiptFile, card_due_day: cardDueDay }))
+      await onSubmit({ ...form, card_due_day: cardDueDay })
       onClose()
       if (!initial) setForm(emptyForm())
       setReceiptPreview(null)

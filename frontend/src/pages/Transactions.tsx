@@ -191,6 +191,7 @@ export function Transactions() {
           tags: data.tags,
           payment_method: data.payment_method,
           card_id: data.card_id || undefined,
+          card_due_day: data.card_due_day,
         })
         toast('Transação criada', 'success')
       }

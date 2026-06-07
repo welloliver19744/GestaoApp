@@ -81,19 +81,28 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
 
   useEffect(() => { fetch() }, [fetch])
 
-  const create = async (payload: TransactionCreate & { receiptFile?: File }) => {
-    const { receiptFile, ...rest } = payload
+  const create = async (payload: TransactionCreate & { receiptFile?: File; card_due_day?: number }) => {
+    const { receiptFile, card_due_day, ...rest } = payload
     if (!rest.created_by && pb.authStore.record?.id) {
       rest.created_by = pb.authStore.record.id
     }
     console.log('[TX_CREATE] start', { desc: rest.description, total: rest.total_amount, type: rest.payment_type, store: rest.store, pm: rest.payment_method, category: rest.category, group: rest.group })
     if (payload.payment_type === 'cash') {
+      let dueDate = payload.purchase_date
+      if (card_due_day && payload.payment_method === 'credit_card') {
+        const purchaseDate = new Date(payload.purchase_date)
+        const purchaseDay = purchaseDate.getDate()
+        let targetMonth = purchaseDate.getMonth() + 1
+        if (purchaseDay > card_due_day) targetMonth += 1
+        const targetYear = purchaseDate.getFullYear() + Math.floor(targetMonth / 12)
+        dueDate = new Date(targetYear, targetMonth % 12, Math.min(card_due_day, 28)).toISOString().slice(0, 10)
+      }
       const data = {
         ...rest,
         installment_count: 1,
         installment_number: 1,
         installment_value: payload.total_amount,
-        due_date: payload.purchase_date,
+        due_date: dueDate,
         receipt: receiptFile || undefined,
       }
       if (receiptFile) {
@@ -105,8 +114,20 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       const groupId = safeUUID()
       const val = payload.installment_value
       const promises = Array.from({ length: payload.installment_count }, (_, i) => {
-        const due = new Date(payload.purchase_date)
-        due.setMonth(due.getMonth() + i + 1)
+        let due
+        if (card_due_day && payload.payment_method === 'credit_card') {
+          const purchaseDate = new Date(payload.purchase_date)
+          const purchaseDay = purchaseDate.getDate()
+          let targetMonth = purchaseDate.getMonth() + 1
+          if (purchaseDay > card_due_day) targetMonth += 1
+          targetMonth += i
+          const targetYear = purchaseDate.getFullYear() + Math.floor(targetMonth / 12)
+          const targetMonthAdj = targetMonth % 12
+          due = new Date(targetYear, targetMonthAdj, Math.min(card_due_day, 28))
+        } else {
+          due = new Date(payload.purchase_date)
+          due.setMonth(due.getMonth() + i + 1)
+        }
         const data = {
           ...rest,
           installment_number: i + 1,

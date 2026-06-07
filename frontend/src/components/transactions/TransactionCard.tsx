@@ -66,7 +66,11 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
           <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
             <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
             {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
-            <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(tx.due_date)}</span>
+            {tx.payment_method === 'debit_card' || tx.payment_method === 'cash' || tx.payment_method === 'pix' ? (
+              <span className="flex items-center gap-1 text-neon-green"><CheckCircle2 size={12} />Pago em {formatDate(tx.purchase_date)}</span>
+            ) : (
+              <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(tx.due_date)}</span>
+            )}
             {parseTags(tx.tags).length > 0 && (
               <span className="flex items-center gap-1 flex-wrap">
                 {parseTags(tx.tags).map(t => {

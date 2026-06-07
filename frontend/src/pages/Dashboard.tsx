@@ -263,6 +263,9 @@ export function Dashboard() {
         due_date: data.purchase_date,
         notes: data.notes || undefined,
         group: activeGroup || undefined,
+        payment_method: data.payment_method,
+        card_id: data.card_id || undefined,
+        card_due_day: data.card_due_day,
       })
       toast('Transação criada', 'success')
     } catch {
