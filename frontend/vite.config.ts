@@ -13,7 +13,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/icon-192x192.png', 'icons/icon-512x512.png', 'icons/icon-maskable-512x512.png'],
       manifest: {
         name: 'Gestão Casa',

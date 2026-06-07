@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { Card } from '../ui/Card'
 import { Modal } from '../ui/Modal'
 import { formatCurrency, formatDate } from '../../lib/utils'
@@ -25,16 +25,6 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
   const [showShare, setShowShare] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [sharedWith, setSharedWith] = useState<string[]>(tx.shared_with || [])
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!showMenu) return
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showMenu])
 
   const isShared = sharedWith.length > 0
   const isOwner = pb.authStore.record?.id === tx.created_by
@@ -102,34 +92,34 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
               <p className="text-xs text-surface-500">Total: {formatCurrency(tx.total_amount, tx.currency)}</p>
             )}
           </div>
-          <div className="shrink-0 flex flex-col items-center gap-1 relative" ref={menuRef}>
-            <button onClick={() => setShowMenu(m => !m)} className="text-surface-500 hover:text-surface-200 transition-colors p-1" title="Mais ações">
-              <MoreVertical size={16} />
+          <div className="shrink-0 flex items-center">
+            <button onClick={() => setShowMenu(true)} className="text-surface-500 hover:text-surface-200 transition-colors p-2" title="Mais ações">
+              <MoreVertical size={18} />
             </button>
-            {showMenu && (
-              <div className="absolute right-0 top-8 z-10 min-w-[160px] rounded-lg bg-surface-800 border border-surface-700 shadow-lg py-1 flex flex-col">
+            <Modal open={showMenu} onClose={() => setShowMenu(false)} title="Ações">
+              <div className="flex flex-col gap-1">
                 {isOwner && (
-                  <button onClick={() => { setShowShare(true); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
-                    <Share2 size={14} /> Compartilhar
+                  <button onClick={() => { setShowShare(true); setShowMenu(false) }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-surface-200 hover:bg-surface-800 transition-colors text-left">
+                    <Share2 size={18} /> <span className="text-sm">Compartilhar</span>
                   </button>
                 )}
                 {receiptUrl && (
-                  <button onClick={() => { setShowReceipt(true); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
-                    <ImageIcon size={14} /> Ver comprovante
+                  <button onClick={() => { setShowReceipt(true); setShowMenu(false) }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-surface-200 hover:bg-surface-800 transition-colors text-left">
+                    <ImageIcon size={18} /> <span className="text-sm">Ver comprovante</span>
                   </button>
                 )}
                 {onEdit && (
-                  <button onClick={() => { onEdit(tx); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
-                    <Pencil size={14} /> Editar
+                  <button onClick={() => { onEdit(tx); setShowMenu(false) }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-surface-200 hover:bg-surface-800 transition-colors text-left">
+                    <Pencil size={18} /> <span className="text-sm">Editar</span>
                   </button>
                 )}
                 {onDelete && (
-                  <button onClick={() => { onDelete(tx); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-neon-red hover:bg-neon-red/10 transition-colors text-left">
-                    <Trash2 size={14} /> Excluir
+                  <button onClick={() => { onDelete(tx); setShowMenu(false) }} className="flex items-center gap-3 px-4 py-3 rounded-lg text-neon-red hover:bg-neon-red/10 transition-colors text-left">
+                    <Trash2 size={18} /> <span className="text-sm">Excluir</span>
                   </button>
                 )}
               </div>
-            )}
+            </Modal>
           </div>
         </div>
       </Card>
