@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
-import { pb, groups } from '../api/client'
+import { pb } from '../api/client'
 import type { Group, GroupCreate, User } from '../api/types'
+
+async function groupsApi(path: string, init: RequestInit = {}) {
+  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/groups/${path}`
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}),
+      ...(init.headers || {}),
+    },
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw { message: body.error || res.statusText, status: res.status, response: body }
+  return body
+}
 
 export function useGroups() {
   const [data, setData] = useState<Group[]>([])
@@ -10,8 +25,8 @@ export function useGroups() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await groups.getFullList({ sort: '-created' })
-      setData(res)
+      const res = await groupsApi('list')
+      setData(res.items || [])
     } catch (e) {
       console.error('Erro ao carregar grupos', e)
     } finally {
@@ -22,19 +37,19 @@ export function useGroups() {
   useEffect(() => { load() }, [load])
 
   const create = async (input: GroupCreate) => {
-    const record = await groups.create({ ...input, created_by: me })
-    setData(prev => [record, ...prev])
+    const record = await groupsApi('create', { method: 'POST', body: JSON.stringify({ ...input, created_by: me }) })
+    setData(prev => [record as Group, ...prev])
     return record
   }
 
   const update = async (id: string, input: Partial<Group>) => {
-    const record = await groups.update(id, input)
-    setData(prev => prev.map(g => g.id === id ? record : g))
+    const record = await groupsApi('update', { method: 'POST', body: JSON.stringify({ id, ...input }) })
+    setData(prev => prev.map(g => g.id === id ? (record as Group) : g))
     return record
   }
 
   const remove = async (id: string) => {
-    await groups.delete(id)
+    await groupsApi('delete', { method: 'POST', body: JSON.stringify({ id }) })
     setData(prev => prev.filter(g => g.id !== id))
   }
 

@@ -62,4 +62,20 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
+self.addEventListener('message', (event) => {
+  const data: { type?: string; pattern?: string } = (event as MessageEvent).data || {}
+  if (data.type !== 'INVALIDATE_CACHE' || !data.pattern) return
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open('api-cache')
+      const keys = await cache.keys()
+      await Promise.all(
+        keys
+          .filter(req => req.url.includes(data.pattern!))
+          .map(req => cache.delete(req))
+      )
+    })(),
+  )
+})
+
 export {}

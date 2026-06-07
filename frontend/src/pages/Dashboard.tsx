@@ -12,7 +12,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { DonutChart } from '../components/ui/DonutChart'
 import { useToast } from '../components/ui/Toast'
-import { formatCurrency, formatMonthYear } from '../lib/utils'
+import { formatCurrency, formatMonthYear, txInMonth } from '../lib/utils'
 import { generateInsights, getAIConfig } from '../lib/ai'
 import type { Transaction } from '../api/types'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
@@ -67,7 +67,7 @@ export function Dashboard() {
   const clearDayFilter = () => setSelectedDay(null)
 
   const filtered = useMemo(() => {
-    let list = transactions.filter(tx => tx.due_date?.startsWith(monthStr))
+    let list = transactions.filter(tx => txInMonth(tx, monthStr))
     if (activeGroup) {
       list = list.filter(tx => tx.group === activeGroup)
     }
@@ -116,7 +116,7 @@ export function Dashboard() {
 
   const prevMonthTotal = useMemo(() => {
     return transactions
-      .filter(tx => tx.due_date?.startsWith(previousMonthStr))
+      .filter(tx => txInMonth(tx, previousMonthStr))
       .reduce((acc, tx) => acc + tx.installment_value, 0)
   }, [transactions, previousMonthStr])
 
@@ -127,7 +127,7 @@ export function Dashboard() {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
       const str = d.toISOString().slice(0, 7)
       const monthTotal = transactions
-        .filter(tx => tx.due_date?.startsWith(str))
+        .filter(tx => txInMonth(tx, str))
         .reduce((acc, tx) => acc + tx.installment_value, 0)
       total += monthTotal
       count++
@@ -160,7 +160,7 @@ export function Dashboard() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() + monthOffset - i, 1)
       const str = d.toISOString().slice(0, 7)
-      const monthTxs = transactions.filter(tx => tx.due_date?.startsWith(str))
+      const monthTxs = transactions.filter(tx => txInMonth(tx, str))
       months.push({
         name: d.toLocaleDateString('pt-BR', { month: 'short' }),
         total: monthTxs.reduce((a, tx) => a + tx.installment_value, 0),
@@ -194,7 +194,7 @@ export function Dashboard() {
       const d = new Date(today.getFullYear(), today.getMonth() + monthOffset - i, 1)
       const str = d.toISOString().slice(0, 7)
       const monthCats = new Map<string, number>()
-      for (const tx of transactions.filter(t => t.due_date?.startsWith(str))) {
+      for (const tx of transactions.filter(t => txInMonth(t, str))) {
         monthCats.set(tx.category, (monthCats.get(tx.category) || 0) + tx.installment_value)
       }
       for (const [cat, val] of monthCats) {

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { transactions, categories as categoriesApi } from '../api/client'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { formatCurrency } from '../lib/utils'
+import { formatCurrency, txInMonth } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction, Category } from '../api/types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts'
@@ -50,7 +50,7 @@ export function Reports() {
     const months: { name: string; total: number; paid: number }[] = []
     for (let m = 0; m < 12; m++) {
       const prefix = `${year}-${String(m + 1).padStart(2, '0')}`
-      const monthTxs = allTxs.filter(tx => tx.due_date?.startsWith(prefix))
+      const monthTxs = allTxs.filter(tx => txInMonth(tx, prefix))
       months.push({
         name: formatShortMonth(prefix),
         total: monthTxs.reduce((a, tx) => a + tx.installment_value, 0),

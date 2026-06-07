@@ -1,6 +1,40 @@
 import { useState, useEffect, useCallback } from 'react'
-import { pb, transactions, stores } from '../api/client'
+import { pb, transactions } from '../api/client'
 import type { Transaction, TransactionCreate } from '../api/types'
+import { invalidateApiCache } from '../lib/swCache'
+
+const windowFetch: typeof fetch = (...args) => fetch(...args)
+
+export async function rawPatch(id: string, data: Record<string, unknown>) {
+  const clean: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined && v !== null && v !== '') clean[k] = v
+  }
+  const url = pb.buildURL(`/api/collections/transactions/records/${id}`)
+  const res = await windowFetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': pb.authStore.token || '',
+    },
+    body: JSON.stringify(clean),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw { data: body.data || {}, response: body, message: body.message || 'Error', status: res.status }
+  return body
+}
+
+export async function rawDelete(id: string) {
+  const url = pb.buildURL(`/api/collections/transactions/records/${id}`)
+  const res = await windowFetch(url, {
+    method: 'DELETE',
+    headers: { 'Authorization': pb.authStore.token || '' },
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw { data: body.data || {}, response: body, message: body.message || 'Error', status: res.status }
+  }
+}
 
 async function pbCreate(data: Record<string, unknown>) {
   const clean: Record<string, unknown> = {}
@@ -80,10 +114,10 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
 
   const create = async (payload: TransactionCreate & { receiptFile?: File }) => {
     const { receiptFile, ...rest } = payload
-    // Always include created_by from auth (some callers like Dashboard omit it)
     if (!rest.created_by && pb.authStore.record?.id) {
       rest.created_by = pb.authStore.record.id
     }
+    console.log('[TX_CREATE] start', { desc: rest.description, total: rest.total_amount, type: rest.payment_type, store: rest.store, pm: rest.payment_method, category: rest.category, group: rest.group })
     if (payload.payment_type === 'cash') {
       const data = {
         ...rest,
@@ -119,14 +153,15 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
       })
       await Promise.all(promises)
     }
+    await invalidateApiCache('/api/collections/transactions')
     await fetch()
-    // auto-save store
     if (payload.store) {
       try {
-        const existing = await stores.getList(1, 1, { filter: `name = '${payload.store.replace(/'/g, "''")}' && owner = '${pb.authStore.record?.id}'` })
-        if (existing.totalItems === 0) {
-          await stores.create({ name: payload.store, owner: pb.authStore.record?.id })
-        }
+        await windowFetch(`${typeof window !== 'undefined' ? window.location.origin : ''}/api/stores/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}) },
+          body: JSON.stringify({ name: payload.store, owner: pb.authStore.record?.id }),
+        })
       } catch {}
     }
   }
@@ -139,36 +174,39 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
     } else {
       await transactions.update(tx.id, rest)
     }
+    await invalidateApiCache('/api/collections/transactions')
     await fetch()
-    // auto-save store on update
     if (payload.store) {
       try {
-        const existing = await stores.getList(1, 1, { filter: `name = '${payload.store.replace(/'/g, "''")}' && owner = '${pb.authStore.record?.id}'` })
-        if (existing.totalItems === 0) {
-          await stores.create({ name: payload.store, owner: pb.authStore.record?.id })
-        }
+        await windowFetch(`${typeof window !== 'undefined' ? window.location.origin : ''}/api/stores/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}) },
+          body: JSON.stringify({ name: payload.store, owner: pb.authStore.record?.id }),
+        })
       } catch {}
     }
   }
 
   const remove = async (tx: Transaction) => {
     if (tx.group_id) {
-      const siblings = await transactions.getFullList({ filter: `group_id='${tx.group_id}'` })
-      await Promise.all(siblings.map(s => transactions.delete(s.id)))
+      const siblings = await transactions.getList(1, 200, { filter: `group_id='${tx.group_id}'` })
+      await Promise.all(siblings.items.map(s => rawDelete(s.id)))
     } else {
-      await transactions.delete(tx.id)
+      await rawDelete(tx.id)
     }
+    await invalidateApiCache('/api/collections/transactions')
     await fetch()
   }
 
   const togglePaid = async (tx: Transaction) => {
-    await transactions.update(tx.id, {
+    await rawPatch(tx.id, {
       paid: !tx.paid,
       paid_at: !tx.paid ? new Date().toISOString() : null,
       paid_by: !tx.paid ? pb.authStore.record?.id : null,
     })
+    await invalidateApiCache('/api/collections/transactions')
     await fetch()
   }
 
-  return { data, loading, refetch: fetch, create, update, remove, togglePaid }
+  return { data, loading, refetch: fetch, create, update, remove, togglePaid, rawPatch, rawDelete }
 }

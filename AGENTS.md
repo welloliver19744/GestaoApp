@@ -234,3 +234,13 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 - **Fix 4:** `useTransactions.ts create()` agora injeta `created_by` automaticamente se caller não enviar.
 - **Fix 5:** 5 transações órfãs com `created_by=''` corrigidas no SQLite direto.
 - **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário.
+
+## Session Log 2026-06-06
+- **Bug raíz (recorrente):** Transações criadas não aparecem na aba Transações (HTTP 400 em todo GET `/api/collections/transactions/records`).
+- **Causa real:** `listRule` da collection `transactions` continha `(group != '' && group.members ?= @request.auth.id)` — PocketBase v0.39 falha ao processar expansão de relation aninhada no `listRule` e retorna 400 em **toda** query de listagem (mesmo com `fields=id`). Direct fetch por ID (`viewRule`) funcionava, validando que os dados estavam salvos.
+- **Fix 1:** `listRule` e `viewRule` simplificados para `@request.auth.id != '' && (created_by = @request.auth.id || shared_with ?= @request.auth.id)`. Filtro por `group` é feito no frontend (`activeGroup` em `Transactions.tsx`).
+- **Fix 2:** Colunas `created` e `updated` adicionadas em todas as 7 tabelas SQL-direct (`transactions`, `recurring_transactions`, `goals`, `groups`, `stores`, `cards`, `categories`) + system fields correspondentes no JSON `fields` de `_collections`. Sem isso, `sort: '-created'` retorna HTTP 400.
+- **Fix 3:** `useGroups.ts` e `useGoals.ts` mudaram `sort: '-created'` → `sort: '-id'` (defensivo, UUIDs são time-based).
+- **Limpeza:** 8 transações de teste (Test transaction, Test from shell, Test frontend payload, Test via Nginx, TESTE FIX 06062026) removidas do DB. Restaram 2 reais: "Kkk" R$12 e "teste" R$0.98.
+- **Validação:** POST + GET end-to-end via API funciona, lista retorna 2 transações, `sort=-purchase_date` e `sort=+due_date` OK.
+- **Não esqueça:** Hard refresh no browser (PWA cache StaleWhileRevalidate).

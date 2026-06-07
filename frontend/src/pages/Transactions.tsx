@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useTransactions } from '../hooks/useTransactions'
+import { useTransactions, rawPatch, rawDelete } from '../hooks/useTransactions'
 import { TransactionCard } from '../components/transactions/TransactionCard'
 import { TransactionForm } from '../components/transactions/TransactionForm'
 import { GroupSelector } from '../components/groups/GroupSelector'
@@ -9,9 +9,9 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { useToast } from '../components/ui/Toast'
 import { TransactionCardSkeleton } from '../components/ui/Skeleton'
-import { Plus, ChevronLeft, ChevronRight, Download, Search, Filter, Square, CheckSquare } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Download, Search, Filter, Square, CheckSquare, CheckCircle2, Circle } from 'lucide-react'
 import { PREDEFINED_TAGS, parseTags } from '../lib/tags'
-import { formatMonthYear } from '../lib/utils'
+import { formatMonthYear, txInMonth, formatDate, formatCurrency } from '../lib/utils'
 import { exportCSV, exportPDF } from '../lib/export'
 import type { Transaction } from '../api/types'
 import type { Category } from '../api/types'
@@ -33,6 +33,8 @@ export function Transactions() {
   const [filterPaid, setFilterPaid] = useState<'all' | 'paid' | 'unpaid'>('all')
   const [filterTag, setFilterTag] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [groupInstallments, setGroupInstallments] = useState(true)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [stores, setStores] = useState<string[]>([])
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -90,7 +92,7 @@ export function Transactions() {
   }
 
   const filtered = useMemo(() => {
-    let list = transactions.filter(tx => tx.due_date?.startsWith(monthStr))
+    let list = transactions.filter(tx => txInMonth(tx, monthStr))
     if (activeGroup) {
       list = list.filter(tx => tx.group === activeGroup)
     }
@@ -118,6 +120,36 @@ export function Transactions() {
     }
     return list
   }, [transactions, monthStr, selectedDay, searchQuery, filterCategory, filterPaid, filterTag, activeGroup])
+
+  type PurchaseGroup = {
+    key: string
+    representative: Transaction
+    installments: Transaction[]
+    isInstallment: boolean
+    paidCount: number
+    totalCount: number
+    nextDue: Transaction | null
+  }
+
+  const grouped = useMemo<PurchaseGroup[]>(() => {
+    if (!groupInstallments) return []
+    const map = new Map<string, Transaction[]>()
+    for (const tx of filtered) {
+      const key = tx.group_id || `single:${tx.id}`
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(tx)
+    }
+    const result: PurchaseGroup[] = []
+    for (const [key, txs] of map) {
+      txs.sort((a, b) => a.due_date.localeCompare(b.due_date))
+      const rep = txs[0]
+      const isInst = txs.length > 1 || rep.payment_type === 'installment'
+      const paid = txs.filter(t => t.paid).length
+      const next = txs.find(t => !t.paid) || null
+      result.push({ key, representative: rep, installments: txs, isInstallment: isInst, paidCount: paid, totalCount: txs.length, nextDue: next })
+    }
+    return result.sort((a, b) => a.representative.due_date.localeCompare(b.representative.due_date))
+  }, [filtered, groupInstallments])
 
   const openNew = () => { setEditing(null); setModalOpen(true) }
   const openEdit = (tx: Transaction) => { setEditing(tx); setModalOpen(true) }
@@ -220,7 +252,7 @@ export function Transactions() {
     if (selected.size === 0) return
     if (!confirm(`Excluir ${selected.size} transação(ões)?`)) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').delete(tx.id)))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawDelete(tx.id)))
       toast(`${selected.size} transação(ões) excluída(s)`, 'success')
       setSelected(new Set())
     } catch {
@@ -231,7 +263,7 @@ export function Transactions() {
   const handleBulkTogglePaid = async (paid: boolean) => {
     if (selected.size === 0) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').update(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawPatch(tx.id, { paid, paid_at: paid ? new Date().toISOString() : null, paid_by: paid ? pb.authStore.record?.id : null })))
       toast(`${selected.size} transação(ões) ${paid ? 'pagas' : 'pendentes'}`, 'success')
       setSelected(new Set())
     } catch {
@@ -242,7 +274,7 @@ export function Transactions() {
   const handleBulkCategory = async () => {
     if (!bulkCategory || selected.size === 0) return
     try {
-      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => pb.collection('transactions').update(tx.id, { category: bulkCategory })))
+      await Promise.all(filtered.filter(tx => selected.has(tx.id)).map(tx => rawPatch(tx.id, { category: bulkCategory })))
       toast(`Categoria alterada em ${selected.size} transação(ões)`, 'success')
       setSelected(new Set())
       setBulkCategory('')
@@ -368,6 +400,15 @@ export function Transactions() {
                 Limpar filtros
               </button>
             )}
+            <button
+              onClick={() => setGroupInstallments(g => !g)}
+              className={`h-8 px-3 rounded-lg text-xs transition-colors flex items-center gap-1.5 ${
+                groupInstallments ? 'bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan' : 'bg-surface-800 text-surface-400 hover:text-surface-200'
+              }`}
+              title={groupInstallments ? 'Mostrando 1 linha por compra. Clique para ver cada parcela.' : 'Clique para agrupar parcelas'}
+            >
+              {groupInstallments ? 'Agrupado por compra' : 'Parcela a parcela'}
+            </button>
           </div>
         )}
       </div>
@@ -417,7 +458,46 @@ export function Transactions() {
                 </div>
               )}
             </div>
-            {filtered.map(tx => (
+            {groupInstallments
+              ? grouped.map(g => {
+                  const isExpanded = expandedGroups.has(g.key)
+                  const allPaid = g.paidCount === g.totalCount
+                  const tx = g.representative
+                  return (
+                    <div key={g.key} className="space-y-1">
+                      <TransactionCard
+                        transaction={{ ...tx, installment_value: tx.total_amount, installment_number: g.paidCount, installment_count: g.totalCount, paid: allPaid, due_date: g.nextDue?.due_date || tx.due_date } as Transaction}
+                        onTogglePaid={() => g.nextDue ? handleTogglePaid(g.nextDue) : undefined}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        selected={selected.has(tx.id)}
+                        onSelect={toggleSelect}
+                      />
+                      {g.isInstallment && g.totalCount > 1 && (
+                        <button
+                          onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.has(g.key) ? n.delete(g.key) : n.add(g.key); return n })}
+                          className="w-full text-xs text-surface-500 hover:text-neon-cyan transition-colors py-1"
+                        >
+                          {isExpanded ? '▾ Ocultar parcelas' : `▸ Ver ${g.totalCount} parcelas`}
+                        </button>
+                      )}
+                      {isExpanded && g.installments.map(inst => (
+                        <div key={inst.id} className="ml-8 px-4 py-2 rounded-lg bg-surface-900/50 border border-surface-800/50 flex items-center gap-3 text-sm">
+                          <button onClick={() => handleTogglePaid(inst)} className="shrink-0" title={inst.paid ? 'Marcar pendente' : 'Marcar paga'}>
+                            {inst.paid ? <CheckCircle2 size={16} className="text-neon-green" /> : <Circle size={16} className="text-surface-500" />}
+                          </button>
+                          <span className={`flex-1 ${inst.paid ? 'text-surface-500 line-through' : 'text-surface-300'}`}>
+                            Parcela {inst.installment_number}/{inst.installment_count} · {formatDate(inst.due_date)}
+                          </span>
+                          <span className={`shrink-0 font-mono text-xs ${inst.paid ? 'text-surface-500' : 'text-surface-300'}`}>
+                            {formatCurrency(inst.installment_value, inst.currency)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })
+              : filtered.map(tx => (
               <TransactionCard
                 key={tx.id}
                 transaction={tx}

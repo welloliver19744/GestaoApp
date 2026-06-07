@@ -39,11 +39,11 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
     <>
       <Card className="flex items-center gap-4 group">
         {onSelect && (
-          <button onClick={() => onSelect(tx.id)} className="shrink-0 text-surface-500 hover:text-surface-200 transition-colors">
+          <button onClick={() => onSelect(tx.id)} className="shrink-0 text-surface-500 hover:text-surface-200 transition-colors" title="Selecionar para ações em massa">
             {selected ? <CheckSquare size={20} className="text-neon-cyan" /> : <Square size={20} />}
           </button>
         )}
-        <button onClick={() => onTogglePaid(tx)} className="shrink-0">
+        <button onClick={() => onTogglePaid(tx)} className="shrink-0" title={tx.paid ? 'Marcar como pendente' : 'Marcar como paga'}>
           {tx.paid
             ? <CheckCircle2 size={22} className="text-neon-green" />
             : <Circle size={22} className="text-surface-500 hover:text-surface-300 transition-colors" />

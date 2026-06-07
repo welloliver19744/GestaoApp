@@ -238,7 +238,6 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         store: store || prev.store,
         purchase_date: date || prev.purchase_date,
         total_amount: total || prev.total_amount,
-        notes: `[NFCe] ${debug}`,
       }))
     } catch (e) {
       if (e instanceof Error && e.message !== 'cancelled') {
@@ -258,10 +257,14 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
     e.preventDefault()
     setSaving(true)
     try {
+      console.log('[FORM_SUBMIT] payload:', JSON.stringify({ description: form.description, store: form.store, total_amount: form.total_amount, purchase_date: form.purchase_date, payment_type: form.payment_type, payment_method: form.payment_method, currency: form.currency, category: form.category, tags: form.tags, hasReceipt: !!form.receiptFile }))
       await onSubmit(form)
       onClose()
       if (!initial) setForm(emptyForm())
       setReceiptPreview(null)
+    } catch (err) {
+      console.error('[FORM_SUBMIT] error:', err)
+      alert('Erro ao salvar: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setSaving(false)
     }
@@ -510,8 +513,6 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
                   if (type === 'cash') {
                     set('installment_count', 1)
                     set('installment_value', form.total_amount)
-                  } else if (form.installment_count === 1) {
-                    set('installment_count', 2)
                   }
                 }}
                 className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all ${
@@ -531,12 +532,14 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-1">Total de Parcelas</label>
               <input
-                type="number"
-                min="2"
-                max="120"
-                value={form.installment_count}
+                type="text"
+                inputMode="numeric"
+                value={form.installment_count > 1 ? String(form.installment_count) : ''}
+                placeholder="Ex: 3"
                 onChange={e => {
-                  const count = parseInt(e.target.value) || 1
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 3)
+                  if (v === '') { set('installment_count', 1); return }
+                  const count = parseInt(v, 10)
                   set('installment_count', count)
                   set('installment_value', Math.round((form.total_amount / count) * 100) / 100)
                 }}

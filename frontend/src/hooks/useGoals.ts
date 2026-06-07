@@ -11,7 +11,7 @@ export function useGoals() {
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await goalsCollection.getList(1, 50, { sort: '-created' })
+      const result = await goalsCollection.getList(1, 50, { sort: '-id' })
       setData(result.items as unknown as Goal[])
     } catch (e) {
       console.error('Failed to fetch goals', e)

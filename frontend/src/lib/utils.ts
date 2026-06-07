@@ -36,6 +36,14 @@ export function cn(...classes: (string | false | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ')
 }
 
+export function isInMonth(date: string | undefined | null, monthStr: string): boolean {
+  return !!date && date.startsWith(monthStr)
+}
+
+export function txInMonth(tx: { due_date?: string; purchase_date?: string }, monthStr: string): boolean {
+  return isInMonth(tx.due_date, monthStr) || isInMonth(tx.purchase_date, monthStr)
+}
+
 export function compressImage(
   file: File,
   maxDim = 1200,
