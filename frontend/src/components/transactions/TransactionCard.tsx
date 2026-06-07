@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card } from '../ui/Card'
 import { Modal } from '../ui/Modal'
 import { formatCurrency, formatDate } from '../../lib/utils'
@@ -6,7 +6,7 @@ import { pb, transactions } from '../../api/client'
 import type { Transaction } from '../../api/types'
 import { useCategories } from '../../hooks/useCategories'
 import { ShareModal } from './ShareModal'
-import { CheckCircle2, Circle, Tag, Store, Calendar, Pencil, Trash2, ImageIcon, Share2, CheckSquare, Square } from 'lucide-react'
+import { CheckCircle2, Circle, Tag, Store, Calendar, Pencil, Trash2, ImageIcon, Share2, CheckSquare, Square, MoreVertical } from 'lucide-react'
 import { getTagDef, parseTags } from '../../lib/tags'
 
 interface TransactionCardProps {
@@ -23,7 +23,18 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
   const isInstallment = tx.payment_type === 'installment'
   const [showReceipt, setShowReceipt] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const [sharedWith, setSharedWith] = useState<string[]>(tx.shared_with || [])
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showMenu) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showMenu])
 
   const isShared = sharedWith.length > 0
   const isOwner = pb.authStore.record?.id === tx.created_by
@@ -91,26 +102,33 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
               <p className="text-xs text-surface-500">Total: {formatCurrency(tx.total_amount, tx.currency)}</p>
             )}
           </div>
-          <div className="flex flex-col items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-            {isOwner && (
-              <button onClick={() => setShowShare(true)} className="text-surface-500 hover:text-neon-purple transition-colors p-1" title="Compartilhar">
-                <Share2 size={14} />
-              </button>
-            )}
-            {receiptUrl && (
-              <button onClick={() => setShowReceipt(true)} className="text-surface-500 hover:text-neon-amber transition-colors p-1" title="Ver comprovante">
-                <ImageIcon size={14} />
-              </button>
-            )}
-            {onEdit && (
-              <button onClick={() => onEdit(tx)} className="text-surface-500 hover:text-neon-cyan transition-colors p-1">
-                <Pencil size={14} />
-              </button>
-            )}
-            {onDelete && (
-              <button onClick={() => onDelete(tx)} className="text-surface-500 hover:text-neon-red transition-colors p-1">
-                <Trash2 size={14} />
-              </button>
+          <div className="shrink-0 flex flex-col items-center gap-1 relative" ref={menuRef}>
+            <button onClick={() => setShowMenu(m => !m)} className="text-surface-500 hover:text-surface-200 transition-colors p-1" title="Mais ações">
+              <MoreVertical size={16} />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-8 z-10 min-w-[160px] rounded-lg bg-surface-800 border border-surface-700 shadow-lg py-1 flex flex-col">
+                {isOwner && (
+                  <button onClick={() => { setShowShare(true); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
+                    <Share2 size={14} /> Compartilhar
+                  </button>
+                )}
+                {receiptUrl && (
+                  <button onClick={() => { setShowReceipt(true); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
+                    <ImageIcon size={14} /> Ver comprovante
+                  </button>
+                )}
+                {onEdit && (
+                  <button onClick={() => { onEdit(tx); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-surface-200 hover:bg-surface-700 transition-colors text-left">
+                    <Pencil size={14} /> Editar
+                  </button>
+                )}
+                {onDelete && (
+                  <button onClick={() => { onDelete(tx); setShowMenu(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-neon-red hover:bg-neon-red/10 transition-colors text-left">
+                    <Trash2 size={14} /> Excluir
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
