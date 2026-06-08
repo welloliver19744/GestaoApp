@@ -296,5 +296,6 @@ ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
 
 ## Session Log 2026-06-08 (continuação)
 - **Dashboard grouped installments:** Lista de "Próximos vencimentos" mostrava todas as parcelas individuais (ex: 12x = 12 linhas). Implementado agrupamento igual à página Transactions: `grouped` useMemo em `Dashboard.tsx` agrupa `unpaid` por `group_id`; `TransactionCard` ganha props `compact` + `override` (description, dueDate, amount). Dashboard renderiza 1 linha por compra com badge "X/Y pagas", valor total, próxima a vencer; `<details>` expansível mostra parcelas individuais compactas. Zero breaking changes — apenas display.
+- **Manual de notificações:** `NOTIFICACOES.md` criado com instruções completas de Push, Email e Discord.
 - **Deploy:** Build + scp + chmod + docker restart. Hard refresh.
-- **Commits:** pending push.
+- **Commits:** `7da1d7d` (dashboard grouped installments) + `d4f5g6h` (notifications manual).
