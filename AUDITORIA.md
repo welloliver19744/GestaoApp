@@ -211,3 +211,6 @@
 > **Resumo:** 42/42 itens do checklist concluídos + 1 extra (item 39). Restam 6 ideias no backlog (itens 36-38, 40-42).
 >
 > **Observação:** Git email alterado de noreply para welloliver1974@gmail.com para compatibilidade com Vercel.
+> **Workflow definido:** Alterar código → atualizar docs .md → git commit → git push → Vercel auto-deploy.
+> **Vercel:** Projeto `gestao-app` (wellington-s-projects1) em https://gestao-app-three.vercel.app.
+> Config rootDirectory=`frontend` via vercel.json + frontend/vercel.json com framework=vite.

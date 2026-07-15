@@ -325,7 +325,62 @@ Todas as coleções SQL-direct precisam das colunas `created` e `updated` (datet
 
 ## 6. Deploy & Manutenção
 
-### Deploy Frontend
+### Workflow Padrão (IMPORTANTE — seguir SEMPRE)
+
+1. **Fazer alterações no código**
+2. **Atualizar os docs .md** (AGENTS.md, AUDITORIA.md, etc.) com o que mudou
+3. **Commitar tudo** no git
+4. **Push para o GitHub** (`git push`)
+5. **Deploy no Vercel** (automático via GitHub OU manual via CLI)
+
+> ⚠️ **Regra de ouro:** Nunca fazer só código sem documentar. Os .md são a fonte da verdade para agentes de IA e para o próprio desenvolvedor.
+
+### Deploy Frontend — Vercel (PRODUÇÃO)
+
+O frontend está hospedado na Vercel: **https://gestao-app-three.vercel.app**
+
+#### Automático (preferido)
+```bash
+git add .
+git commit -m "descrição"
+git push
+# Vercel detecta o push e faz o build automaticamente
+```
+
+#### Manual (via CLI)
+```bash
+cd frontend
+npx vercel --prod --yes --scope wellington-s-projects1
+```
+
+#### Configurações do Projeto Vercel
+- **Projeto:** `gestao-app` (org: `wellington-s-projects1`)
+- **Root Directory:** `frontend` (configurado via `vercel.json` na raiz do repo)
+- **Framework:** Vite (configurado via `frontend/vercel.json`)
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **URL Produção:** https://gestao-app-three.vercel.app
+
+#### Deploy Autenticado (só CLI)
+```bash
+npx vercel login
+npx vercel link --project gestao-app --yes --scope wellington-s-projects1
+npx vercel --prod --yes --scope wellington-s-projects1
+```
+
+#### ⚠️ Problema Comum: Git email bloqueando deploy
+A Vercel verifica se o email do commit pertence a uma conta GitHub válida.
+- **Sintoma:** Deploy fica como `UNKNOWN` ou `Blocked`
+- **Causa:** Git email configurado como noreply do GitHub (`144559011+user@users.noreply.github.com`)
+- **Solução:**
+  ```bash
+  git config --global user.email "seu-email@example.com"  # mesmo email da conta Vercel/GitHub
+  git commit --amend --author="seu-email@example.com"     # corrigir último commit
+  git push --force                                        # re-enviar (cuidado!)
+  ```
+  Ou apenas fazer um novo commit com o email correto.
+
+### Deploy Frontend — Servidor Docker (alternativo)
 ```bash
 cd frontend
 npm run build
