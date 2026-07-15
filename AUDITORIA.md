@@ -209,3 +209,5 @@
 > **Última atualização:** 2026-07-15
 >
 > **Resumo:** 42/42 itens do checklist concluídos + 1 extra (item 39). Restam 6 ideias no backlog (itens 36-38, 40-42).
+>
+> **Observação:** Git email alterado de noreply para welloliver1974@gmail.com para compatibilidade com Vercel.
