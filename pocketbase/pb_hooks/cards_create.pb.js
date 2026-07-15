@@ -66,6 +66,12 @@ routerAdd('POST', '/api/cards/delete', function(c) {
     if (!owner) return c.json(401, { error: 'auth required' });
 
     var collection = $app.findCollectionByNameOrId('cards');
+
+    // Verifica se o cartão existe e pertence ao usuário
+    var existing = $app.findRecordById(collection, id);
+    if (!existing) return c.json(404, { error: 'not found' });
+    if (String(existing.get('owner') || '') !== owner) return c.json(403, { error: 'forbidden' });
+
     var record = new Record(collection);
     record.set('id', id);
     record.markAsNotNew();

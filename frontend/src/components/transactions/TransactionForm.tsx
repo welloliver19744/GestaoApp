@@ -105,6 +105,20 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false)
   const storeRef = useRef<HTMLDivElement>(null)
   const autoCatTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const previewUrlRef = useRef<string | null>(null)
+
+  const setReceiptPreviewUrl = (url: string | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    previewUrlRef.current = url
+    setReceiptPreview(url)
+  }
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(autoCatTimer.current)
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     transactionsApi.getFullList({ fields: 'store', filter: "store != ''" }).then(r => {
@@ -158,7 +172,7 @@ export function TransactionForm({ open, onClose, onSubmit, initial }: Transactio
         receiptFile: compressed.file,
         notes: `[DEBUG SCAN]\n${result.rawResponse}`,
       }))
-      setReceiptPreview(URL.createObjectURL(compressed.file))
+      setReceiptPreviewUrl(URL.createObjectURL(compressed.file))
     } catch (e) {
       alert('Erro ao ler conta: ' + (e instanceof Error ? e.message : 'erro desconhecido'))
     } finally {

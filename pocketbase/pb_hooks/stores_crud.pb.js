@@ -65,6 +65,12 @@ routerAdd('POST', '/api/stores/delete', function(c) {
     var id = String((info.body && info.body.id) || '');
     if (!id) return c.json(400, { error: 'id required' });
     var collection = $app.findCollectionByNameOrId('stores');
+
+    // Verifica se a loja existe e pertence ao usuário
+    var existing = $app.findRecordById(collection, id);
+    if (!existing) return c.json(404, { error: 'not found' });
+    if (String(existing.get('owner') || '') !== owner) return c.json(403, { error: 'forbidden' });
+
     var record = new Record(collection);
     record.set('id', id);
     record.markAsNotNew();

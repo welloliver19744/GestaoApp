@@ -1,3 +1,5 @@
+import { parseAmount, normalizeDateStr } from './utils'
+
 export interface NFCeData {
   total_amount: number
   purchase_date: string
@@ -71,19 +73,8 @@ function extractFields(pairs: Record<string, string>, isDirectAccessKey: boolean
   const rawDate = pairs['dataemissao'] || pairs['data_emissao'] || pairs['data'] || pairs['datahora'] || pairs['demissao'] || pairs['date'] || ''
   const rawStore = pairs['nome'] || pairs['nome_fantasia'] || pairs['nomefantasia'] || pairs['razao_social'] || pairs['razaosocial'] || pairs['emitente'] || pairs['xfan'] || pairs['xnome'] || ''
 
-  let total_amount = 0
-  if (rawTotal) {
-    const cleaned = rawTotal.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')
-    total_amount = parseFloat(cleaned) || 0
-  }
-
-  let purchase_date = ''
-  if (rawDate) {
-    const d = rawDate.split(' ')[0]
-    const m = d.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/)
-    if (m) purchase_date = `${m[3]}-${m[2]}-${m[1]}`
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) purchase_date = d
-  }
+  const total_amount = parseAmount(rawTotal)
+  const purchase_date = normalizeDateStr(rawDate)
 
   let store = rawStore
   if (!store && chave && chave.length >= 8) {

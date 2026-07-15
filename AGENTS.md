@@ -1,301 +1,443 @@
-# AGENTS.md — Memória do Projeto Gestão Casa
+# Gestão Casa — Documento do Projeto para Agentes de IA
 
-Você é um engenheiro de software sênior multi-stack integrado via OpenCode e Antigravity. Seu objetivo é desenvolver, refatorar e corrigir bugs de forma autônoma e cirúrgica.
-
-Como estamos operando sob uma cota limitada de processamento no plano gratuito do Ollama, você DEVE seguir as diretrizes rígidas de economia de recursos, precisão e concisão abaixo.
+Este documento é a fonte única da verdade sobre o projeto Gestão Casa. Consulte-o antes de qualquer modificação significativa.
 
 ---
 
-## 1. DETECÇÃO AUTOMÁTICA DE STACK
-* Identifique a linguagem e o framework (Flutter, React Native, Python, Node.js, etc.) puramente através dos arquivos abertos no contexto atual ou pela extensão do arquivo solicitado.
-* Adote instantaneamente as melhores práticas, padrões de projeto e a sintaxe da tecnologia identificada.
+## 1. Project Overview
+
+**Gestão Casa** é um Progressive Web App (PWA) de controle financeiro doméstico. Permite que usuários registrem despesas, acompanhem contas a pagar/pagas, visualizem dashboards, estabeleçam metas financeiras, compartilhem contas com familiares e recebam notificações de lembretes.
+
+- **Público:** Indivíduos e famílias que querem organizar finanças pessoais
+- **Estado:** Funcionalmente completo, com manutenção contínua
+- **Repositório:** `https://github.com/welloliver19744/GestaoApp.git` (branch `master`)
 
 ---
 
-## 2. REGRAS DE SAÍDA E ECONOMIA DE TOKENS (CRÍTICO)
-* **Apenas o Código Necessário:** NUNCA reescreva arquivos inteiros. Retorne estritamente o bloco modificado ou o formato DIFF das linhas alteradas.
-* **Sem Explicações Longas:** Não explique o que o código faz, a menos que eu pergunte explicitamente "por quê?". Vá direto ao ponto.
-* **Sem Comentários no Código:** Não adicione comentários, docstrings longas ou textos explicativos no meio do código gerado. Economize tokens de saída.
-* **Interrupção Rápida:** Se faltarem informações ou o escopo estiver ambíguo para completar a tarefa de forma assertiva, pare imediatamente e pergunte. Não tente adivinhar.
+## 2. Tech Stack
+
+| Camada | Tecnologia | Versão |
+|--------|-----------|--------|
+| **Frontend** | React + Vite + TypeScript | React 19 |
+| **Estilização** | Tailwind CSS | v4 |
+| **Gráficos** | Recharts | — |
+| **Ícones** | Lucide Icons | — |
+| **Backend** | PocketBase (SQLite embutido) | v0.39 |
+| **PWA** | vite-plugin-pwa (injectManifest) + Workbox | — |
+| **Infra** | Docker (Nginx + PocketBase) | — |
+| **Proxy API** | Kong (Supabase Kong) | — |
+| **Servidor** | Ubuntu, UFW, fail2ban, systemd, cron | — |
+| **CI/CD** | GitHub Actions | — |
+
+### Dependências Críticas do Frontend
+- `date-fns` — manipulação de datas (parseISO, format, formatDistanceToNow)
+- `recharts` — gráficos (LineChart, PieChart, BarChart, AreaChart)
+- `lucide-react` — ícones
+- `jspdf` + `jspdf-autotable` — exportação PDF
+- `workbox-core`, `workbox-routing`, `workbox-strategies` — service worker caching
 
 ---
 
-## 3. COMPORTAMENTO NO ANTIGRAVITY / OPENCODE
-* **Contexto Fechado:** Limite seu escopo de leitura estritamente aos arquivos que afetam diretamente a tarefa enviada no prompt. Não varra o repositório inteiro sem necessidade.
-* **Padrões Existentes:** Siga rigidamente o padrão de arquitetura e estilização de código já existente no projeto atual. Não faça refatorações cosméticas ou não solicitadas.
-* **Logs Enxutos:** Se precisar gerar logs para debugar, crie logs de uma única linha simples e direta.
+## 3. Architecture
 
----
-CONFIRME QUE ENTENDEU ESTAS REGRAS RESPONDENDO APENAS: "Modo Econômico Multi-Stack Ativado."
+### Diagrama de Rede
+```
+Browser → Nginx (porta 3001) → /api/ → Kong (8090) → PocketBase (8091)
+                                        → Supabase services
+```
 
+### Containers Docker
+- **gestaocasa-frontend** — Nginx servindo o build React (porta 3001 → 80)
+- **gestaocasa-pocketbase** — PocketBase (porta 8091 → 8090)
 
-## Stack
-- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS v4, Recharts, Lucide Icons
-- **Backend:** PocketBase v0.39 (SQLite, auto-hosted)
-- **Infra:** Docker (PocketBase + Nginx), GitHub Actions CI/CD
-- **Server:** Ubuntu, UFW, fail2ban, cron, systemd timers
-- **PWA:** vite-plugin-pwa (injectManifest), workbox
+### Fluxo de Dados
+1. Usuário acessa `http://137.131.187.156:3001` (ou domínio `contas.housecloud.tec.br`)
+2. Nginx serve os arquivos estáticos do `dist/`
+3. Requisições `/api/*` são proxy-pass para o Kong (porta 8090)
+4. Kong roteia para PocketBase (porta 8091)
+5. PocketBase lê/escreve em SQLite (`/pb_data/data.db`)
+6. Service Worker (Workbox) faz cache StaleWhileRevalidate para GETs
 
-## Repositório
-`https://github.com/welloliver19744/GestaoApp.git` (branch `master`)
-
-## Servidor
+### Servidor
 - **Host:** 137.131.187.156
-- **User:** ubuntu
-- **SSH Key:** `C:\Users\welld\Downloads\ssh-key-2026-05-26 (1).key`
-- **Project Dir:** `/home/ubuntu/gestaocasa`
-- **Nginx Container:** `gestaocasa-frontend` (port 3001 → 80)
-- **PocketBase Container:** `gestaocasa-pocketbase` (port 8091 → 8090)
-- **Kong:** `supabase-kong` (port 8090)
+- **Usuário SSH:** ubuntu
+- **Chave SSH:** `C:\Users\welld\Downloads\ssh-key-2026-05-26 (1).key`
+- **Diretório do projeto:** `/home/ubuntu/gestaocasa`
 
-## Arquitetura de Rede
-```
-Browser → Nginx (3001) → /api/ → Kong (8090) → PocketBase (8091 → 8090)
-                                       → Supabase services
-```
+---
 
-## Comandos Essenciais
+## 4. Features Implementadas
+
+### 4.1 Core
+
+#### Transações (CRUD)
+- Coleção `transactions` no PocketBase
+- Criação com descrição, categoria (text), estabelecimento, data, valor, moeda
+- Pagamento à vista ou parcelado (com número de parcelas)
+- Anexo de comprovante (imagem)
+- Tags/labels (11 predefinidas: essencial, moradia, alimentação, etc.) — campo JSON
+- Métodos de pagamento: Dinheiro, Pix, Crédito, Débito
+- Cartões associados (collection `cards`: nome, tipo crédito/débito, dia vencimento)
+- Auto-salvamento de estabelecimentos (collection `stores`)
+- Marcar como pago/pendente (toggle no círculo)
+- Editar / Excluir (single e em grupo)
+- Compartilhar transação com outros usuários (ShareModal)
+- Busca textual, filtros por categoria/tags/status/mês
+
+#### Dashboard
+- Cards de resumo: A Pagar, Pago no Mês, Saldo Projetado, vs Mês Anterior
+- Gráfico de evolução mensal (linha, 6 meses: total vs pago)
+- Gráfico de rosca (gastos por categoria no mês)
+- Orçamento por categoria (barras de progresso)
+- Lista de próximos vencimentos (agrupados por compra)
+- Metas financeiras (top 3 com progresso)
+- Comparativo mensal (tabela: categoria vs mês anterior, % diferença)
+- Economia sugerida (análise das 3 maiores categorias, sugere 10% de redução)
+- IA Insights (botão "Gerar" — resumo inteligente, previsão, alertas)
+- Navegação por mês (< >, seletor, botão "Hoje")
+
+#### Multi-moeda
+- BRL, USD, EUR, GBP, ARS, CLP
+- Campo `currency` (required) e `original_amount`
+- `formatCurrency(value, currency?)` — formata com símbolo correto
+
+#### Bulk Edit
+- Checkboxes + "Selecionar todos"
+- Ações em massa: pagar, pendente, alterar categoria, excluir
+
+#### Relatórios Anuais
+- Página `/reports` com seletor de ano
+- Gráficos: barras (gastos mensais) + linha (tendência)
+- Top 10 categorias com percentual
+- Exportação CSV e PDF
+
+#### Contas Familiares (Grupos)
+- Coleção `groups`: name, description, members (relation[]), created_by
+- CRUD de grupos, gerenciamento de membros
+- GroupSelector no Dashboard e Transactions
+- Filtro por grupo via URL param
+- ShareModal integrado (filtra membros do grupo ativo)
+
+### 4.2 IA & Automação
+
+#### Escaneamento de Contas com IA (OCR)
+- `scanBillWithAI()` em `ai.ts` — lê conta/foto e extrai valor, data, estabelecimento, categoria
+- Formato de imagem: base64 (compatível com Anthropic, OpenAI, Gemini)
+- Parsing resiliente: `normalizeScannedJSON()` + `parseAmount()` + `normalizeDateStr()`
+- Aceita chaves PT/EN e formato `R$ 1.234,56`
+- Provedores com visão: OpenAI (`gpt-4o-mini`), Anthropic (`claude-3-haiku`), Gemini (`gemini-1.5-flash`), OpenRouter (modelos vision)
+- ⚠️ Groq descontinuou suporte a visão — não funciona para scan
+
+#### Auto-categorização IA
+- OnBlur no campo descrição com debounce de 400ms
+- Só sugere se ainda não há categoria selecionada
+
+#### Provedores de IA (12)
+OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA NIM, Mistral, Google Gemini, Ollama, Custom
+- Endpoint e modelo auto-preenchidos ao selecionar
+- Botão "Buscar modelos" — fetch da lista de modelos da API
+- Persistência: modelo atual e padrão sempre aparecem no select mesmo se não retornados pela API
+
+#### Transações Recorrentes
+- Coleção `recurring_transactions`
+- Frequência: mensal ou anual, dia do mês
+- Hook PocketBase gera transações automaticamente
+- UI: criar, editar (preserva active/next_due), ativar/desativar, excluir
+
+#### Scanner de Código de Barras
+- Botão "Código" no TransactionForm
+- Usa `BarcodeDetector` API (Chrome/Edge Android, desktop)
+- Busca produto na Open Food Facts (gratuito, sem chave)
+- Não funciona no iPhone Safari
+
+#### NFC-e QR Code
+- Escaneia QR code do cupom fiscal SAT/SP
+- Envia pro hook `nfce_consulta.pb.js` que consulta SEFAZ SP
+- Retorna: loja, data, valor total e itens da nota
+
+### 4.3 Notificações
+
+#### Push Notifications
+- VAPID keys, Service Worker (evento `push`)
+- Toggle no Settings
+- Lembretes: contas vencendo amanhã, contas vencidas não pagas
+- Push reativo: ao compartilhar transação
+- Cron: 08:00 e 18:00
+- Script: `scripts/send-push.js`
+
+#### E-mail
+- Nodemailer, config SMTP em `scripts/email-config.json`
+- Template: `email-config.example.json`
+- Lembretes de contas a vencer e vencidas
+- Cron: 08:05
+- Script: `scripts/send-email-notifications.js`
+
+#### Discord
+- Webhook, config em `scripts/discord-config.json`
+- Botão "Testar" no Settings
+- Cron: 08:08
+- Script: `scripts/send-discord.js`
+
+### 4.4 UX
+
+#### Temas
+- Dark mode (padrão) + tema claro (classe `.light` no HTML)
+- `useTheme` hook, localStorage key `gestaocasa-theme`
+- Paleta invertida no CSS — sem mudar componentes
+
+#### PWA
+- Instalável: `beforeinstallprompt`, banner "Instalar App"
+- Service Worker: autoUpdate (sem prompt)
+- Cache: StaleWhileRevalidate para GET `/api/*`, NetworkOnly para mutations
+- Cache API de até 7 dias
+- `swCache.ts` — invalidação manual de cache via mensagem `INVALIDATE_CACHE`
+
+#### Offline
+- OfflineBanner (faixa âmbar "Sem conexão")
+- Dados em cache disponíveis para leitura offline
+- Escrita (criar/editar/excluir) requer conexão
+
+#### Onboarding
+- Tutorial de 6 passos na primeira visita
+- localStorage key `gestaocasa-onboarding-done`
+
+#### Responsividade Mobile
+- Headers empilham (flex-col), grids colapsam (1 coluna)
+- Hover sempre visível em mobile (md:opacity-0 md:group-hover)
+- Bottom nav com scroll horizontal (8 itens, sem sobreposição)
+- Botão "Buscar modelos" compactado (apenas ícone em telas pequenas)
+
+### 4.5 Infra & Segurança
+
+| Item | Detalhe |
+|------|---------|
+| **Backup** | `scripts/backup.sh`, cron 03:00, 14 dias retenção |
+| **Fail2Ban** | 2 jails: sshd (5 tentativas → 1h ban), nginx-limit-req (3 excessos em 10min → 1h ban) |
+| **UFW** | Portas liberadas: 22, 80, 443, 3001, 8091 |
+| **Healthcheck** | systemd timer a cada 5min, script `scripts/healthcheck.sh` |
+| **Rate Limiting** | Nginx: 10r/s API (burst 20), 3r/m login (burst 2) |
+| **CI/CD** | GitHub Actions: lint, build, 24 testes, TruffleHog |
+| **Cloudflare** | Domínio `contas.housecloud.tec.br` passa por tunnel Cloudflare |
+
+### 4.6 Testes (24)
+- `tests/utils.test.ts` (12) — formatCurrency, formatDate, cn
+- `tests/export.test.ts` (2) — exportCSV
+- `tests/toast.test.tsx` (3) — ToastProvider
+- `tests/share-modal.test.tsx` (7) — ShareModal (render, seleção, save, cancel, empty state)
+- Framework: Vitest + Testing Library
+- CI: `npm test --if-present` no GitHub Actions
+
+---
+
+## 5. PocketBase v0.39 — Coleções, Bugs e Workarounds
+
+### 5.1 Coleções
+
+| Collection | Campos Principais |
+|-----------|------------------|
+| `transactions` | description, category (text), store, purchase_date, total_amount, payment_type (cash\|installment), installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by (text), group_id, notes, receipt (file), currency, original_amount, created_by (relation→users), shared_with (relation[]), group (relation→groups), tags (json), payment_method (text), card_id (text) |
+| `groups` | name, description, members (relation[]), created_by |
+| `recurring_transactions` | description, category, store, total_amount, currency, payment_type, installment_count, installment_value, frequency, day_of_month, month, active, next_due, notes, owner |
+| `goals` | name, target_amount, current_amount, deadline, color, icon, owner, goal_type (goal\|investment), initial_amount |
+| `push_subscriptions` | user (relation), subscription (json), enabled |
+| `cards` | name, type (credit\|debit), due_day, owner (text) |
+| `stores` | name, owner (relation) |
+| `categories` | name, color, icon, type, budget |
+
+### 5.2 Regras de Listagem (transactions)
+```
+@request.auth.id != '' && (created_by = @request.auth.id || shared_with ?= @request.auth.id)
+```
+Filtro por group é feito no frontend (`activeGroup`). ⚠️ Não usar `group.members ?=` no listRule — PocketBreak v0.39 retorna HTTP 400 em TODAS as queries.
+
+### 5.3 Bugs Conhecidos e Workarounds (CRÍTICO)
+
+#### Bug #1: Collections criadas via SQL direto têm REST API quebrado
+- **Sintoma:** `data: {}` em toda requisição CRUD via REST
+- **Causa:** PocketBase v0.39 não reconhece collections inseridas diretamente no SQLite como "completas"
+- **Workaround:** Hooks customizados com `new Record(collection)` + `$app.save()` / `$app.delete()`
+- **Collections afetadas:** cards, stores, groups (parcialmente)
+
+#### Bug #2: Campos `relation` em collections SQL falham no save
+- **Sintoma:** `validation_missing_rel_records` ao criar/atualizar transações
+- **Causa:** PB v0.39 valida relations com `dao.FindRecordById()` que falha para coleções SQL
+- **Workaround:** Todo campo `relation` para coleção SQL deve ser `text`
+- **Campos já convertidos:** `category` (text), `paid_by` (text), `owner` (text em cards)
+
+#### Bug #3: `$app.dao()` NÃO existe
+- `$app.Dao()` também não existe no Goja runtime do PB v0.39
+- Use diretamente: `$app.findCollectionByNameOrId()`, `$app.findRecordsByFilter()`, `$app.findRecordById()`, `$app.save()`, `$app.delete()`
+
+#### Bug #4: CollectionId `_pb_users_auth_` é rejeitada
+- `new Field()` + `importCollectionsByMarshaledJSON()` rejeitam
+- Workaround: Python script com sqlite3 direto no data.db
+
+#### Bug #5: `crypto.randomUUID()` não existe em cron context
+- Usar fallback: `Math.random().toString(36).slice(2)` ou `safeUUID()`
+
+#### Bug #6: `c.requestInfo()` (minúsculo) — `c.Request()` não existe
+- Válido no PB v0.39 Goja runtime
+
+#### Bug #7: `$http.send().body` retorna array de bytes
+- Converter com `String.fromCharCode(...)` — não é string direta
+
+### 5.4 Schema Alterações via SQLite Direto
+
+Sempre que precisar modificar schema que o REST API não gerencia:
+
 ```bash
-# Deploy frontend (local)
-cd frontend && npm run build
+docker stop gestaocasa-pocketbase
+docker cp gestaocasa-pocketbase:/pb_data/data.db /tmp/pb_data.db
+python3 scripts/fix_pb_schema.py /tmp/pb_data.db
+docker cp /tmp/pb_data.db gestaocasa-pocketbase:/pb_data/data.db
+docker start gestaocasa-pocketbase
+```
+
+**⚠️ Container precisa estar PARADO** antes de modificar o data.db — senão o PB sobrescreve as mudanças em memória.
+
+### 5.5 Padrões para Criação de Records em Hooks
+
+```javascript
+// SEMPRE setar ID manual antes de $app.save()
+let rec = new Record(collection);
+rec.set('id', id); // crypto.randomUUID() ou Math.random fallback
+// ... setar campos ...
+$app.save(rec);
+
+// Para deletar records criados via new Record():
+rec.markAsNotNew();
+$app.delete(rec);
+```
+
+### 5.6 Hooks Ativos
+- `cards_create.pb.js` — `POST /api/cards/create`
+- `cards_delete.pb.js` — `POST /api/cards/delete`
+- `cards_list.pb.js` — `GET /api/cards/list`
+- `groups_crud.pb.js` — CRUD groups
+- `stores_crud.pb.js` — CRUD stores
+- `nfce_consulta.pb.js` — consulta NFC-e na SEFAZ SP
+- `push_endpoint.pb.js` — endpoint de diagnóstico push
+
+### 5.7 Collection `created` e `updated`
+Todas as coleções SQL-direct precisam das colunas `created` e `updated` (datetime) + system fields correspondentes no JSON `fields` de `_collections`. Sem isso, `sort: '-created'` retorna HTTP 400.
+
+---
+
+## 6. Deploy & Manutenção
+
+### Deploy Frontend
+```bash
+cd frontend
+npm run build
 scp -r dist/* ubuntu@137.131.187.156:/home/ubuntu/gestaocasa/frontend/dist/
-# 🔴 OBRIGATORIO: fix permissions + restart container (arquivos novos herdam umask restrito)
-ssh ... 'chmod -R 755 /home/ubuntu/gestaocasa/frontend/dist/ && docker restart gestaocasa-frontend'
-# Nota: Sempre reiniciar o container para que o Docker remonte a pasta dist (evita 403 Forbidden por inodes stale/antigos)
+ssh ubuntu@137.131.187.156 "chmod -R o+rX /home/ubuntu/gestaocasa/frontend/dist/ && docker restart gestaocasa-frontend"
+```
+**⚠️ Sempre reiniciar o container** — arquivos novos herdam umask restrito e inodes stale causam 403 Forbidden.
 
-# Backup manual
-ssh ... 'bash /home/ubuntu/gestaocasa/scripts/backup.sh'
-
-# Ver logs push
-ssh ... 'tail -f /home/ubuntu/gestaocasa/scripts/push.log'
-
-# Reload nginx
-ssh ... 'docker exec gestaocasa-frontend nginx -s reload'
-
-# Fix schema (SQLite direto)
-scp scripts/fix_pb_schema.py ubuntu@...:/tmp/
-ssh ... 'docker stop gestaocasa-pocketbase && docker cp gestaocasa-pocketbase:/pb_data/data.db /tmp/pb_data.db && python3 /tmp/fix_pb_schema.py /tmp/pb_data.db && docker cp /tmp/pb_data.db gestaocasa-pocketbase:/pb_data/data.db && docker start gestaocasa-pocketbase'
-
-# Ver logs do PocketBase
-ssh ... 'docker logs gestaocasa-pocketbase --tail 50'
+### Backup Manual
+```bash
+ssh ubuntu@137.131.187.156 'bash /home/ubuntu/gestaocasa/scripts/backup.sh'
 ```
 
-## Cron Ativo
-```
-0 3 * * * backup.sh              # Backup diário
-0 8 * * * send-push.js           # Push notifications (morning)
-0 18 * * * send-push.js          # Push notifications (evening)
-5 8 * * * send-email-notifications.js  # Email notifications
-8 8 * * * node /home/ubuntu/gestaocasa/scripts/send-discord.js >> /home/ubuntu/gestaocasa/scripts/push.log 2>&1  # Discord
+### Ver Logs
+```bash
+ssh ubuntu@137.131.187.156 'tail -f /home/ubuntu/gestaocasa/scripts/push.log'
+ssh ubuntu@137.131.187.156 'docker logs gestaocasa-pocketbase --tail 50'
 ```
 
-## PocketBase (v0.39)
-- Admin: `http://137.131.187.156:8091/_/`
-- Collections: transactions, categories, recurring_transactions, goals, push_subscriptions, users, groups
-- Auth: POST `/api/collections/users/auth-with-password`
-- Superuser: POST `/api/collections/_superusers/auth-with-password`
-- Hooks: `pocketbase/pb_hooks/*.pb.js` (reload automático)
-- **Criação/edição direta no SQLite** para collections que o REST API não gerencia: parar container, copiar data.db, modificar com Python/sqlite3, copiar de volta, iniciar container
-- **`$app.dao()` NÃO existe** — `$app.Dao()` também não existe em PB v0.39 Goja runtime
-- **`$app`** expõe diretamente: `$app.findCollectionByNameOrId()`, `$app.findRecordsByFilter()`, `$app.findRecordById()`, `$app.save()`, `$app.delete()`
-- **`new Record(collection)`** funciona para criar records em JS. **Sempre setar ID manual** (`record.set('id', id)`) antes de `$app.save(record)` — senão erro `GoError: empty primary key is not allowed`
-- **`record.markAsNotNew()`** existe e permite `$app.delete()` em records criados via `new Record()` em vez de carregados do DB
-- **Coleções criadas via SQL direto** (`INSERT INTO _collections`) têm CRUD REST quebrado (`data: {}`). **Workaround:** hooks customizados que usam `$app.save()` / `$app.delete()` com `new Record(collection)`
-- **`id` não é lido pelo ORM** em coleções SQL — adicionar `id` como campo `text` no array `fields` da `_collections` resolve (Python com sqlite3 direto). Ex: `{'name': 'id', 'type': 'text', 'required': True, 'options': {}, 'system': True, 'pk': True}`
-- **Campos armazenados como JSON** na coluna `fields` da tabela `_collections` (não existe tabela `_fields` separada)
-- **`new Field()` + `importCollectionsByMarshaledJSON()`** rejeitam `_pb_users_auth_` como collectionId para campos relation. Workaround: Python script com sqlite3 direto
-- **`crypto.randomUUID()`** não disponível em cron context — usar fallback Math.random
-- **`c.requestInfo()`** existe em minúsculo (não `c.Request()`) no PocketBase v0.39 Goja runtime
-- **`$http.send().body`** retorna array de bytes (não string) — converter com `String.fromCharCode`
-- Para alterar schema: parar container, copiar data.db, rodar Python, copiar de volta, iniciar container
+### Rodar Testes
+```bash
+cd frontend
+npm test
+```
 
-## Collections API Fields
+### Reload Nginx
+```bash
+ssh ubuntu@137.131.187.156 'docker exec gestaocasa-frontend nginx -s reload'
+```
 
-### transactions
-- description, category (text — mudado de relation pra bypassar bug PB v0.39), store, purchase_date, total_amount, payment_type (cash|installment)
-- installment_count, installment_number, installment_value, due_date, paid, paid_at, paid_by
-- group_id, notes, receipt (file), currency (required=true), original_amount, created_by (relation → _pb_users_auth_), shared_with (relation[]), group (relation → 803c7281-...)
-- tags (json), payment_method (text), card_id (text)
-- **listRule:** `@request.auth.id != '' && (created_by = @request.auth.id || shared_with ?= @request.auth.id || (group != '' && group.members ?= @request.auth.id))`
+### Cron Jobs Ativos
+```
+0 3 * * * backup.sh                         # Backup diário
+0 8 * * * send-push.js                      # Push manhã
+0 18 * * * send-push.js                     # Push tarde
+5 8 * * * send-email-notifications.js       # Email
+8 8 * * * send-discord.js                   # Discord
+```
 
-### groups
-- name, description, members (relation[]), created_by (relation)
+### PWA Cache Stale
+Após deploy, pode ser necessário hard refresh + purgar Cloudflare (se usar o domínio `contas.housecloud.tec.br`). O PWA está configurado com `registerType: 'autoUpdate'` — atualiza automaticamente após deploy.
 
-### recurring_transactions
-- description, category, store, total_amount, currency, payment_type, installment_count, installment_value
-- frequency (monthly|yearly), day_of_month, month, active, next_due, notes, owner
+---
 
-### goals
-- name, target_amount, current_amount, deadline, color, icon, owner, goal_type (goal|investment), initial_amount
+## 7. Configurações do App
 
-### push_subscriptions
-- user (relation), subscription (json), enabled
-
-### cards
-- name, type (credit|debit), due_day, owner (text — relation quebra REST)
-
-### stores
-- name, owner (relation)
-
-## Features Implementadas (22 itens originais + extras)
-
-### Completos
-1. Backup automático (cron, 14d retention)
-2. OCR + upload comprovantes (compressImage, scanBillWithAI)
-3. Transações recorrentes (cron hook + UI)
-4. Push notifications (VAPID, SW, cron)
-5. Export CSV/PDF
-6. Dashboard avançado (cards, line, donut, budgets, goals)
-7. UX/UI (toasts, skeletons, search, filters)
-8. Metas financeiras (CRUD, progress bars)
-9. Multi-moeda (currency field, formatCurrency)
-10. Compartilhamento (shared_with, ShareModal)
-11. Segurança (fail2ban, UFW, healthcheck, CI/CD)
-12. Testes (24 unit + component tests)
-13. Error handling (console.error + toast em todos .catch)
-14. Tema claro/escuro (useTheme, localStorage, .light CSS class)
-15. Autocomplete lojas (TransactionForm)
-16. Responsividade mobile (headers empilham, grid colapsa, hover → visible on mobile)
-17. Editar recorrências (preserva active/next_due)
-18. Galeria de comprovantes (/receipts, grid month filter)
-19. Suporte offline (StaleWhileRevalidate API cache, OfflineBanner)
-20. Rate limiting (Nginx 10r/s API, 3r/m login, fail2ban nginx-limit-req)
-21. Notificações e-mail (nodemailer, cron, config template)
-22. Contas familiares (groups collection, GroupSelector, Dashboard/Transactions filtrados, ShareModal integrado, schema corrigido)
-
-### Extras pós-plano
-- Auto-categorização AI onBlur
-- PWA install prompt (beforeinstallprompt)
-- Onboarding tutorial (6 steps, localStorage)
-- Comparativo mensal (tabela categoria vs mês anterior no Dashboard)
-- Bulk edit (checkboxes, selecionar todos, pagar/pendente/categoria/excluir)
-- Metas investimento (goal_type, appreciation %)
-- Relatórios anuais (/reports, bar/line charts, top categorias, export)
-- Auto-fetch modelos AI ao trocar provedor, salvar chave e carregar página
-- Notificações Discord (webhook, Settings UI, test button, cron 08:08)
-- Scanner código de barras (BarcodeDetector API + Open Food Facts)
-- Bottom nav mobile com scroll horizontal (todos os 8 itens, sem sobreposição)
-- Modo Viagem (Settings toggle + datas, isola despesas de viagem do Dashboard, widget exclusivo com detalhes expansíveis)
-- Comparativo de Lojas (ranking top 5 estabelecimentos no Dashboard, barras de progresso, ticket médio, visitas)
-
-## Configurações Importantes
-- **AI:** Config em Settings (provedor, modelo, API key) — salvo no localStorage. Provedores: OpenAI, Anthropic, OpenRouter, Groq, DeepSeek, Together, Perplexity, NVIDIA, Mistral, Google Gemini, Ollama, Custom. Botão "Buscar modelos" popula o select com modelos da API.
-- **Push:** Toggle em Settings, requer service worker + VAPID keys
-- **Email:** Preencher `scripts/email-config.json` no servidor com SMTP
+- **AI:** Settings → Provedor, modelo, API key — salvo no localStorage. Botão "Buscar modelos" popula select.
+- **Push:** Settings → Ativar/desativar, requer SW + VAPID keys
+- **Email:** `scripts/email-config.json` no servidor (SMTP)
+- **Discord:** Settings → URL webhook + botão Testar; cron usa `scripts/discord-config.json`
 - **Tema:** localStorage key `gestaocasa-theme`
 - **Onboarding:** localStorage key `gestaocasa-onboarding-done`
 - **Modo Viagem:** localStorage key `gestaocasa_travel_config` (JSON: active, name, startDate, endDate)
 
-## Decisões Técnicas
-- **window.location.origin** como PB_URL runtime (Nginx proxy funciona sempre)
+---
+
+## 8. Melhorias Futuras
+
+### Backlog de Ideias
+- Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
+- Notificações WhatsApp / Telegram
+- Importação de CSV (extrato bancário)
+- App mobile nativo (Capacitor / Tauri)
+- Dashboard customizável (usuário escolhe quais cards exibir)
+- Metas compartilhadas (grupo contribui para mesma meta)
+- Suporte a mais idiomas (inglês, espanhol)
+- Modo escuro automático (follow system)
+
+### Pendências Técnicas
+- `scanBillWithAI` — modo debug ativo (campo `notes` mostra `rawResponse` da IA). Remover após confirmar estabilidade.
+- Configuração SMTP manual no servidor (`scripts/email-config.json` ainda precisa ser preenchido)
+
+---
+
+## 9. Decisões Técnicas Importantes
+
+- **`window.location.origin`** como PB_URL runtime (Nginx proxy funciona sempre)
 - **SQLite direto** quando PocketBase v0.39 migration API falha
 - **Relação compartilhada:** `shared_with ?= @request.auth.id` na list rule
 - **Tema claro:** classe `.light` no HTML com paleta invertida (sem mudar componentes)
 - **SW caching:** StaleWhileRevalidate para GET, NetworkOnly para mutations
 - **Rate limit:** Nginx level (não PocketBase) para simplicidade
-- **Auto-fetch modelos AI:** Ao trocar de provedor nas Configurações, `fetchModels()` é chamado automaticamente (com overrides de provider/endpoint para evitar stale closure). Também dispara ao carregar página (se já tiver API key) e ao salvar a chave.
+- **`raw fetch` bypass:** `useTransactions.ts` usa `window.fetch()` em vez de `pb.collection('transactions').create()` porque o SDK detecta tipo conflitante com campo `receipt`
+- **`safeUUID()`:** Usar como fallback de `crypto.randomUUID()` em contexto HTTP
+- **Agrupar parcelas:** Dashboard + Transactions agrupam por `group_id` (ou `id` para cash). Toggle "Agrupado por compra" / "Parcela a parcela"
+- **Ações do card mobile:** Botão `⋮` → `<Modal>` centralizado (`max-w-lg mx-4 max-h-[85vh]`) — dropdown causava overflow
+- **Card due_day:** Compra dia 5, cartão vence dia 15 → 1ª parcela dia 15/mês+1. Compra após due_day → pula um mês
+- **Débito/à vista sem "Vence":** `TransactionCard` mostra "Pago em {data}" em vez de "Vence {data}"
 
-## Implementado Recentemente
-- **Scanner de código de barras:** Botão "Código" no TransactionForm. Usa `BarcodeDetector` API (Chrome/Edge, Android). Abre a câmera, detecta código de barras e busca dados do produto na Open Food Facts (grátis, sem chave). Preenche descrição, marca e preço automaticamente. Fallback: mostra o código como descrição. Não funciona no iPhone Safari.
-- **NFC-e QR Code:** Botão "NFCe" no TransactionForm. Escaneia QR code do cupom fiscal SAT/SP, extrai a URL bruta do QR e envia pro hook `nfce_consulta.pb.js`. O hook faz fetch direto na SEFAZ SP (`ConsultaQRCode.aspx?p=...|3|1`), parseia o HTML do DANFE (txtTopo, totalNumb, txtTit) e retorna loja, data, valor total e itens da nota. Usa `c.requestInfo().query.url` (GET), converte body byte array pra string com `String.fromCharCode`. Fallback: constroi URL via base64url da accessKey.
-- **Bottom nav mobile com scroll horizontal:** Todos os 8 itens de navegação visíveis no celular sem sobreposição, com scroll horizontal e barra de rolagem oculta.
-- **Tags/labels nas transações:** 11 tags predefinidas (essencial, moradia, alimentação, etc) com cores. Seletor no TransactionForm, badges no TransactionCard, filtro na página Transactions. Schema: campo `tags` (JSON) na collection transactions via SQLite direto.
-- **Economia sugerida no Dashboard:** Card que analisa as 3 maiores categorias de gasto do mês e sugere 10% de redução, mostrando o valor economizado.
-- **Escaneamento de contas/cupons via IA (resiliente):** Parse resiliente via `normalizeScannedJSON` + `parseAmount` + `normalizeDateStr`. Aceita chaves PT/EN, converte DD/MM/YYYY. Imagem enviada em 2600px/0.95q. max_tokens=600. **DEBUG ATIVO:** campo notes mostra rawResponse da IA. Prompt reescrito com exemplo concreto de saída e estrutura ENTRADA → SAIDA → REGRAS para forçar o modelo a ler SOMENTE o último valor (TOTAL GERAL) ignorando itens individuais. `cleanJSONResponse()` substituiu regex guloso por indexOf/lastIndexOf. Nova `scanReceiptWithAI()` para leitura detalhada de itens de varejo. Pendente: remover debug do notes após confirmar fix. `ai.ts` — `scanBillWithAI`, `scanReceiptWithAI`, `parseAmount`, `normalizeScannedJSON`, `normalizeDateStr`, `cleanJSONResponse`.
-- **Métodos de Pagamento + Cartões + Estabelecimentos:** Seleção de forma de pagamento (Dinheiro, Pix, Crédito, Débito) nas transações, suporte para cadastrar cartões (sem dados confidenciais, apenas nome e dia do vencimento) associados às despesas e auto-salvamento automático de estabelecimentos na coleção de lojas.
-- **Persistência de Modelos de IA e Ajustes Mobile:** Correção na lista de modelos de IA para garantir a presença do modelo atual e padrão do provedor mesmo que não retornados pela API (evitando sumir após reload). Botão de busca de modelos unificado e 100% responsivo para mobile (ocultando texto extenso em telas pequenas e deixando apenas o ícone). Formulário de cadastro de cartões com vencimento condicional ao tipo "Crédito" e labels explícitos de dia de vencimento.
-- **NFC-e QR Code:** Botão "NFCe" no TransactionForm. Escaneia QR code do cupom fiscal SAT/SP, extrai a URL bruta do QR e envia pro hook `nfce_consulta.pb.js`. O hook faz fetch direto na SEFAZ SP (`ConsultaQRCode.aspx?p=...|3|1`), converte body (array de bytes) pra string com `String.fromCharCode`, parseia o HTML do DANFE (txtTopo → loja, Emissão → data, totalNumb txtMax → valor total, txtTit → itens) e retorna loja, data, valor total e itens da nota. Usa `c.requestInfo().query.url` (GET). Fallback: constroi URL via base64url da accessKey. Parser em `nfce.ts` — `parseNFCeQRCode()`, `lookupCNPJ()`. Descoberta importante: `c.requestInfo()` existe em minúsculo (não `c.Request()`) no PocketBase v0.39. `$http.send().body` retorna array de bytes, não string.
-- **Correção vencimento cartão:** `due_day` mudou de `number` pra `string` no estado do formulário, permitindo limpar o campo e digitar novo valor. Antes `parseInt('') || 1` impedia o usuário de apagar o "1" padrão. Conversão pra número ocorre apenas ao salvar.
-- **Cards CRUD via hooks:** REST API retorna `data: {}` para coleções criadas via SQL direto. Solução: hooks `cards_create.pb.js` com `POST /api/cards/create` (usa `new Record()` + `$app.save()` com ID manual) e `POST /api/cards/delete` (usa `new Record()` + `markAsNotNew()` + `$app.delete()`). Frontend em `useCards.ts` chama hooks via `window.fetch` em vez do SDK. Confirmação com `confirm()` antes de excluir.
-- **Cards list via hook:** REST API não retorna `id` para coleções SQL. Solução hook `GET /api/cards/list` com `$app.findRecordsByFilter()` + `r.getId()` (funciona após adicionar `id` no array `fields` do `_collections`).
-- **FIX category relation bug:** PocketBase v0.39 valida relations internamente com `dao.FindRecordById(collection.Id, recordId)` durante save, mas falha para coleções criadas via SQL direto (erro `validation_missing_rel_records`). Solução: mudar campo `category` de `relation` para `text`.
-- **FIX Dashboard missing currency/created_by:** `Dashboard.tsx handleCreate` não enviava `currency` (campo required=true → `validation_required`) nem `created_by` (listRule filtra por `created_by = @request.auth.id` → transação invisível no UI). Solução: adicionar `created_by` no `useTransactions.ts create()` como fallback automático.
-- **FIX empty relation collectionId:** Ao criar collections via SQL, campos `relation` ficam com `collectionId: ''`. Corrigir via Python no data.db setando `_pb_users_auth_` para users, ou UUID real para groups.
-- **FIX empty select values:** Campos `select` (payment_type, currency) ficam com `values: []` em coleções SQL. Corrigir via Python no data.db.
-- **Raw fetch bypass:** `useTransactions.ts pbCreate()` usa `window.fetch()` em vez de `pb.collection('transactions').create()` porque o SDK do PocketBase faz auto-detecção de tipo (multipart vs JSON) conflitante com o campo `receipt`.
-- **Nginx DNS `pocketbase` funciona** no Docker (172.20.0.2). `nslookup` falha no container por ser BusyBox.
+---
 
-## Ideias para Próximas Features
-- Gráfico de projeção futura (saldo previsto 6 meses baseado em recorrências)
-- Notificações WhatsApp/Telegram
-- Tags/labels nas transações (emergência, lazer, essencial)
-- Importação de CSV (extrato bancário)
-- App mobile nativo (Capacitor/Tauri)
-- Dashboard customizável (usuário escolhe cards)
-- Metas compartilhadas (grupo contribui para mesma meta)
-- Modo escuro automático (follow system)
-- Suporte a mais idiomas (inglês, espanhol)
+## 10. Auditoria 2026-07-15 — 42 Itens Corrigidos
 
-## Session Log 2026-06-05
-- **Bug raíz:** Transações criadas do Dashboard nunca apareciam na lista. Causa: listRule `created_by = @request.auth.id` com `created_by` vazio (Dashboard não enviava o campo).
-- **Fix 1:** `category` mudado de `relation` pra `text` — PB v0.39 falha validação de relations em coleções SQL durante save (`validation_missing_rel_records`).
-- **Fix 2:** Todas relations com `collectionId` vazio populadas via script Python (`_pb_users_auth_`).
-- **Fix 3:** Select fields (payment_type, currency) com values vazios populados via script Python.
-- **Fix 4:** `useTransactions.ts create()` agora injeta `created_by` automaticamente se caller não enviar.
-- **Fix 5:** 5 transações órfãs com `created_by=''` corrigidas no SQLite direto.
-- **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário.
+Auditoria completa do código fonte resultou em 42 correções. Ver `AUDITORIA.md` para o checklist detalhado.
 
-## Session Log 2026-06-06
-- **Bug raíz (recorrente):** Transações criadas não aparecem na aba Transações (HTTP 400 em todo GET `/api/collections/transactions/records`).
-- **Causa real:** `listRule` da collection `transactions` continha `(group != '' && group.members ?= @request.auth.id)` — PocketBase v0.39 falha ao processar expansão de relation aninhada no `listRule` e retorna 400 em **toda** query de listagem (mesmo com `fields=id`). Direct fetch por ID (`viewRule`) funcionava, validando que os dados estavam salvos.
-- **Fix 1:** `listRule` e `viewRule` simplificados para `@request.auth.id != '' && (created_by = @request.auth.id || shared_with ?= @request.auth.id)`. Filtro por `group` é feito no frontend (`activeGroup` em `Transactions.tsx`).
-- **Fix 2:** Colunas `created` e `updated` adicionadas em todas as 7 tabelas SQL-direct (`transactions`, `recurring_transactions`, `goals`, `groups`, `stores`, `cards`, `categories`) + system fields correspondentes no JSON `fields` de `_collections`. Sem isso, `sort: '-created'` retorna HTTP 400.
-- **Fix 3:** `useGroups.ts` e `useGoals.ts` mudaram `sort: '-created'` → `sort: '-id'` (defensivo, UUIDs são time-based).
-- **Limpeza:** 8 transações de teste (Test transaction, Test from shell, Test frontend payload, Test via Nginx, TESTE FIX 06062026) removidas do DB. Restaram 2 reais: "Kkk" R$12 e "teste" R$0.98.
-- **Validação:** POST + GET end-to-end via API funciona, lista retorna 2 transações, `sort=-purchase_date` e `sort=+due_date` OK.
-- **Não esqueça:** Hard refresh no browser (PWA cache StaleWhileRevalidate).
+### Resumo por categoria
+| Categoria | Itens | Status |
+|-----------|-------|--------|
+| 🔴 Segurança (endpoints debug, ownership, .gitignore) | 3 | ✅ |
+| 🔴 Bugs produção (TransactionCard, parcelas JS Date) | 4 | ✅ |
+| 🔴 Perda de dados (migration destrutiva, race conditions) | 3 | ✅ |
+| 🟡 Infraestrutura (migrations, scripts, CI/CD) | 6 | ✅ |
+| 🟡 Frontend (injection, memory leak, acessibilidade Modal) | 8 | ✅ |
+| 🟢 Refatoração (duplicação, loading states, cleanup effects) | 11 | ✅ |
+| 📋 Extras (TruffleHog, backlog) | 7 | 1✅ 6⬜ |
 
-## Session Log 2026-06-07
-- **NFC-e + credit card desaparecendo:** Usuário descobriu que transações com `cartão de crédito` (parceladas) não apareciam. Manual com `à vista + dinheiro` funcionava. Root cause: filtros em `Transactions.tsx`, `Dashboard.tsx`, `Reports.tsx` usavam `tx.due_date?.startsWith(monthStr)` — mas em parcelado, `due_date = purchase_date + 1 mês` (correto contábilmente, 1ª parcela vence mês que vem), então compra de junho/2026 só aparecia em julho/2026.
-- **Fix filtro:** Helper `txInMonth(tx, monthStr)` em `lib/utils.ts` checa `due_date` **OU** `purchase_date` no mês. Aplicado em 7 lugares (Transactions, Dashboard current/prev/6m/evolution/anomalies, Reports). Agora compra parcelada aparece no mês da compra E em cada mês de vencimento.
-- **togglePaid / remove / bulk quebrando:** `pb.collection('transactions').update()` e `.delete()` retornam `data: {}` em coleções SQL-direct (mesmo bug que stores/groups). Criados `rawPatch(id, data)` e `rawDelete(id)` em `useTransactions.ts` usando `fetch` cru com `PATCH/DELETE /api/collections/transactions/records/{id}`. Exportados e usados em `togglePaid`, `remove` (single + group), `handleBulkDelete`, `handleBulkTogglePaid`, `handleBulkCategory` em `Transactions.tsx`.
-- **Input parcelas UX:** `parseInt('') || 1` impedia apagar o "1" padrão. Trocado pra `type="text" inputMode="numeric"` com placeholder "Ex: 3", strip não-dígitos, value vazio quando state=1. Removido auto-set pra 2 ao trocar pra "A Prazo" — user digita o número que quiser.
-- **NFC-e notes auto-fill:** `handleNFCeScan` jogava `[NFCe] ${debug}` no campo notes. Removido — notes é do usuário.
-- **Agrupar parcelas na lista:** Novo toggle "Agrupado por compra" (default ON) ↔ "Parcela a parcela" nos filtros. No modo agrupado: 1 linha por compra com `total_amount`, badge "X/Y pagas", próxima a vencer. Toggle "▸ Ver N parcelas" expande mostrando cada parcela com data, valor e toggle individual. `grouped = useMemo` agrupa por `group_id` (ou `id` pra cash).
-- **Ações do card no mobile:** 4 botões empilhados (compartilhar/comprovante/editar/excluir) causavam overflow horizontal no celular. Tentativa 1: dropdown absolute → ainda overflow. Solução final: `<Modal>` centralizado (botão `⋮` MoreVertical abre modal). `Modal` tem `max-w-lg mx-4 max-h-[85vh]` — não tem como estourar viewport.
-- **PWA autoUpdate:** `vite.config.ts` `registerType: 'prompt'` → `'autoUpdate'`. Deploys novos são pegos automaticamente, sem precisar fechar o app.
-- **Tooltips:** Checkbox = "Selecionar para ações em massa", círculo = "Marcar como paga/pendente".
-- **Stores/Groups hooks:** `pocketbase/pb_hooks/groups_crud.pb.js` e `stores_crud.pb.js` (CRUD via `$app.save()` com `new Record()` + ID manual). Bypassa REST quebrado de coleções SQL. Frontend chama `/api/groups/list|create|update|delete` e `/api/stores/list|create|delete`. Sort usa `-name` ou `-updated` (não `-id`, que falha em SQL collections).
-- **SW cache invalidation:** `frontend/src/lib/swCache.ts` (novo) + listener no `sw.ts` escuta mensagem `INVALIDATE_CACHE` e remove chaves do `api-cache` matching pattern. Chamado antes de `fetch()` em `create/update/remove/togglePaid` para evitar `StaleWhileRevalidate` servir cache velho.
-- **Camera scanner upgrades:** `barcode.ts` agora tem botão HD (`applyConstraints({width: {ideal: 1920}, height: {ideal: 1080}})`), botão torch, indicador de resolução atual, viewBox 480px.
-- **NFC-e SEFAZ fix:** `nfce_consulta.pb.js` usa `c.requestInfo().query.url` (lowercase) — `c.Request()` não existe em PB v0.39. `$http.send().body` é byte array, convertido com `String.fromCharCode`.
-- **Backup files:** `/tmp/data.db.bak`, `/tmp/data.db.bak2` (backups manuais das correções SQL).
-- **Commits da sessão:** `23e69ce` (fixes principais) + `55537a7` (mobile overflow v1) + `21b1c65` (modal centralizado + autoUpdate).
-
-## Session Log 2026-06-07 (continuação)
-- **Bug raíz encontrado:** PATCH e DELETE em `/api/collections/transactions/records/{id}` retornavam 400 (`validation_missing_rel_records`) quando payload continha `paid_by` (campo `relation` → users). Mesmo problema do `category` em 2026-06-05. PB v0.39 falha na validação interna de relations em coleções SQL-direct durante save/update.
-- **Investigação de hook bypass:** Tentado criar `transactions_update.pb.js` com `routerAdd('PATCH', '/api/tx/update', ...)` usando `$app.save()` direto. **Falhou** — paths `/api/tx/update`, `/api/tx/patch`, `/api/transactions/update` retornavam 400 vazio sem aparecer nos logs. Paths como `/api/tx/update_transaction` e `/api/ping2` funcionavam normalmente. Causa não identificada (possível quirk de hot-reload do Goja ou cache de rotas). Removido o hook após fix do schema.
-- **Fix definitivo:** Campo `paid_by` mudado de `relation` → `text` via `scripts/fix_paid_by_text.py` (mesmo padrão do `category`). **Importante:** container PB precisa estar **parado** antes de modificar o data.db no bind mount, senão o PB sobrescreve as mudanças em memória. Ordem correta: `docker stop` → `python3 fix_paid_by_text.py` → `docker start`.
-- **Frontend revertido:** `rawPatch`/`rawDelete` removidos de `useTransactions.ts` e `Transactions.tsx`. Voltou a usar `transactionsApi.update()` e `transactionsApi.delete()` (SDK normal). Variável local `transactions` (sombra) renomeada para `transactionsApi` (RecordService) no import do `api/client`.
-- **Validação:** PATCH com `{"paid":true,"paid_by":"jnb6pa2dkd8eei6"}` → 200. DELETE → 200. Frontend deployado.
-- **User record:** email correto é `welloliver@gmail.com` (não `welloliver19744@gmail.com`). ID continua `jnb6pa2dkd8eei6`.
-- **Backup file:** `/tmp/data.db.bak4` (data.db pré-fix).
-- **Pattern confirmado:** Qualquer campo `relation` em collection SQL-direct deve ser `text` no PB v0.39. Solução alternativa (hooks CRUD) é frágil e difícil de debugar.
-- **Commit:** fix `paid_by: relation → text` + revert rawPatch/rawDelete.
-
-## Session Log 2026-06-07 (fixes pos-deploy)
-- **Bug categorias sumindo:** `useCategories.ts` engolia erro do `getFullList()` silenciosamente. Adicionado fallback `getList(1,200)`.
-- **Bug stores auto-save:** `useTransactions.ts` enviava `Authorization` sem prefixo `Bearer`. Hooks `stores_crud.pb.js` rejeitavam com "auth required". Adicionado `Bearer ` nas 2 ocorrências.
-- **Bug cards "auth required":** Token expirado não era refrescado antes das chamadas aos hooks. Adicionado `authRefresh()` + `ensureToken()` em `useCards.ts`.
-- **PWA cache stale:** SW cacheava `/api/cards/list` com resposta velha. Adicionado `invalidateApiCache` + cache-bust `_=${Date.now()}` no fetch.
-- **Cloudflare cache:** Domínio `contas.housecloud.tec.br` passava por Cloudflare tunnel que cacheava assets. Solução: purgar cache do Cloudflare (Purge Everything).
-- **Commits:** `9493861` (fixes auth/cache) + `50709db` (card due_day calc).
-
-## Session Log 2026-06-07 (card due_day + fuso horário)
-- **Card due_day no crédito:** Nova lógica em `useTransactions.ts create()` que usa `card_due_day` do cartão para calcular vencimento de parcelas. Compra dia 5, cartão vence dia 15 → 1ª parcela dia 15/mês+1. Compra após due_day → pula um mês.
-- **Débito/à vista sem "Vence":** `TransactionCard.tsx` — débito/cash/pix mostra "Pago em {data}" em vez de "Vence {data}".
-- **Dashboard + Transactions:** `handleCreate` atualizados para passar `card_due_day`, `payment_method`, `card_id` para o `create()`.
-- **Bug fuso horário `formatDate`:** `new Date('2026-07-07')` no Chrome é UTC meia-noite. Em UTC-3 (Brasil), vira dia anterior. Substituído por `parseISO` do `date-fns` que lida com timezone corretamente.
-- **Commits:** `780fbc0` (formatDate parseISO fix).
-
-## Session Log 2026-06-08
-- **Bug crítico pós-login:** App abre tela de login, autentica, mostra Dashboard por ~1s e some (tela branca). Causa: `formatDate`/`formatMonthYear` em `lib/utils.ts` usavam `parseISO` (date-fns) que interpretava strings ISO com `Z` (UTC) como meia-noite UTC → em UTC-3 (Brasil) vira dia anterior. Ao trocar pra parse manual (`split('T')[0]`), strings malformadas/undefined/empty causavam `new Date(NaN)` → `Intl.DateTimeFormat.format()` lança `RangeError` no Firefox/edge cases → React error boundary não pega → app todo desmonta.
-- **Fix:** `toLocalDate()` defensivo em `utils.ts`: valida string, checa `parts.length===3`, `!isNaN`, fallback `new Date()` se inválido; `formatDate`/`formatMonthYear` envolvidos em `try/catch` com fallback string.
-- **Deploy:** Build + scp + chmod + docker restart. Hard refresh necessário (PWA cache).
-- **Commits:** `5d29e08` (defensive date parsing fix).
-
-## Session Log 2026-06-08 (continuação)
-- **Dashboard grouped installments:** Lista de "Próximos vencimentos" mostrava todas as parcelas individuais (ex: 12x = 12 linhas). Implementado agrupamento igual à página Transactions: `grouped` useMemo em `Dashboard.tsx` agrupa `unpaid` por `group_id`; `TransactionCard` ganha props `compact` + `override` (description, dueDate, amount). Dashboard renderiza 1 linha por compra com badge "X/Y pagas", valor total, próxima a vencer; `<details>` expansível mostra parcelas individuais compactas. Zero breaking changes — apenas display.
-- **Manual de notificações:** `NOTIFICACOES.md` criado com instruções completas de Push, Email e Discord.
-- **Deploy:** Build + scp + chmod + docker restart. Hard refresh.
-- **Commits:** `7da1d7d` (dashboard grouped installments) + `d4f5g6h` (notifications manual).
+### Correções mais importantes
+- **5 endpoints debug removidos** (criavam transações sem auth, vazavam schema)
+- **Ownership verification adicionada** em DELETE/UPDATE de cards, stores, groups
+- **Migration destrutiva `007` desabilitada** — dropava todas as coleções
+- **`changeme-push-secret-2026` removido** dos 3 scripts (agora env var obrigatória)
+- **Bug JS Date de parcelas corrigido** — `setMonth` com dia 31 não criava data correta
+- **Filter injection** em `useGroups.ts` sanitizado com regex
+- **Modal.tsx** com focus trap, aria, Escape, scroll lock
+- **Código duplicado** de `parseAmount`, `normalizeDateStr`, `formatDateBR` centralizado em `utils.ts`

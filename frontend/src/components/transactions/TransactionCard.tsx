@@ -45,7 +45,7 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
   const desc = override?.description ?? tx.description
   const dueDate = override?.dueDate ?? tx.due_date
   const amount = override?.amount ?? tx.installment_value
-  const totalAmount = override?.amount ? tx.total_amount : tx.total_amount
+  const totalAmount = override?.amount ?? tx.total_amount
   const isPaid = tx.paid
 
   return (
@@ -79,7 +79,7 @@ export function TransactionCard({ transaction: tx, onTogglePaid, onEdit, onDelet
             <div className="flex items-center gap-3 text-xs text-surface-400 flex-wrap">
               <span className="flex items-center gap-1"><Tag size={12} />{getLabel(tx.category)}</span>
               {tx.store && <span className="flex items-center gap-1"><Store size={12} />{tx.store}</span>}
-              {tx.payment_method === 'debit_card' || tx.payment_method === 'cash' || tx.payment_method === 'pix' ? (
+              {tx.paid && (tx.payment_method === 'debit_card' || tx.payment_method === 'cash' || tx.payment_method === 'pix') ? (
                 <span className="flex items-center gap-1 text-neon-green"><CheckCircle2 size={12} />Pago em {formatDate(tx.purchase_date)}</span>
               ) : (
                 <span className="flex items-center gap-1"><Calendar size={12} />Vence {formatDate(dueDate)}</span>

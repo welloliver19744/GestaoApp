@@ -90,7 +90,7 @@ export function Groups() {
         <div className="space-y-3">
           {groupsList.map(g => {
             const owner = isOwner(g)
-            const memberCount = (g.members?.length || 0) + 1
+            const memberCount = g.members?.length || 1
             return (
               <Card key={g.id}>
                 <div className="flex items-start justify-between">

@@ -8,7 +8,7 @@ async function groupsApi(path: string, init: RequestInit = {}) {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(pb.authStore.token ? { Authorization: pb.authStore.token } : {}),
+      ...(pb.authStore.token ? { Authorization: `Bearer ${pb.authStore.token}` } : {}),
       ...(init.headers || {}),
     },
   })
@@ -71,8 +71,11 @@ export function useGroups() {
     const group = data.find(g => g.id === groupId)
     if (!group || !group.members?.length) return []
     try {
+      // Sanitiza IDs para evitar filter injection (PocketBase não suporta params nomeados no getFullList)
+      const validIds = group.members.filter(id => /^[a-zA-Z0-9_-]+$/.test(id))
+      if (validIds.length === 0) return []
       const res = await pb.collection<User>('users').getFullList({
-        filter: group.members.map(id => `id='${id}'`).join(' || '),
+        filter: validIds.map(id => `id='${id}'`).join(' || '),
       })
       return res
     } catch {

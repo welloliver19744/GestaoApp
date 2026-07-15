@@ -41,7 +41,8 @@ export function exportCSV(transactions: Transaction[], categories: Category[], f
   a.href = url
   a.download = filename
   a.click()
-  URL.revokeObjectURL(url)
+  // Pequeno delay antes de revogar para garantir que o download começou
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
 export function exportPDF(transactions: Transaction[], categories: Category[], monthLabel: string) {

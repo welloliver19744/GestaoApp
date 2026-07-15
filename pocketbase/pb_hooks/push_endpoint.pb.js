@@ -54,6 +54,7 @@ routerAdd('POST', '/api/push/check', (c) => {
 
 routerAdd('POST', '/api/push/delete-subscription', (c) => {
   try {
+    if (!c.auth.isValid) return c.json(401, { error: 'Unauthorized' })
     var subId = c.request.header.get('X-Subscription-Id')
     if (!subId) return c.json(400, { error: 'missing X-Subscription-Id header' })
     var sub = c.app.findRecordById('push_subscriptions', subId)
@@ -93,14 +94,16 @@ routerAdd('POST', '/api/push/schedule', (c) => {
     }
     
     // Create pending notification record
-    var notification = {
-      user: userId,
-      title: title,
-      body: body,
-      url: url
-    }
-    
-    var record = c.app.collection('pending_notifications').create(notification)
+    var notifCollection = $app.findCollectionByNameOrId('pending_notifications')
+    var record = new Record(notifCollection)
+    record.set('id', crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    }))
+    record.set('user', userId)
+    record.set('title', title)
+    record.set('body', body)
+    record.set('url', url)
+    $app.save(record)
     
     return c.json(200, { success: true, id: record.id })
   } catch (e) {
@@ -113,9 +116,10 @@ routerAdd('GET', '/api/push/pending', (c) => {
     // Require authentication for this endpoint too
     if (!c.auth.isValid) return c.json(401, { error: 'Unauthorized' })
     
-    var records = c.app.findRecordsByFilter('pending_notifications', '', '', 0, 100)
+    var userId = c.auth.record && c.auth.record.id ? String(c.auth.record.id) : ''
+    var records = $app.findRecordsByFilter('pending_notifications', 'user = {:userId}', '', 0, 100, { userId: userId })
     var notifications = []
-    
+
     for (var i = 0; i < records.length; i++) {
       var rec = records[i]
       notifications.push({

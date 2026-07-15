@@ -95,7 +95,9 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
         let targetMonth = purchaseDate.getMonth() + 1
         if (purchaseDay > card_due_day) targetMonth += 1
         const targetYear = purchaseDate.getFullYear() + Math.floor(targetMonth / 12)
-        dueDate = new Date(targetYear, targetMonth % 12, Math.min(card_due_day, 28)).toISOString().slice(0, 10)
+        const dueMonth = targetMonth % 12
+        const lastDay = new Date(targetYear, dueMonth + 1, 0).getDate()
+        dueDate = new Date(targetYear, dueMonth, Math.min(card_due_day, lastDay)).toISOString().slice(0, 10)
       }
       const data = {
         ...rest,
@@ -123,10 +125,16 @@ export function useTransactions(opts: UseTransactionsOptions = {}) {
           targetMonth += i
           const targetYear = purchaseDate.getFullYear() + Math.floor(targetMonth / 12)
           const targetMonthAdj = targetMonth % 12
-          due = new Date(targetYear, targetMonthAdj, Math.min(card_due_day, 28))
+          const lastDay = new Date(targetYear, targetMonthAdj + 1, 0).getDate()
+          due = new Date(targetYear, targetMonthAdj, Math.min(card_due_day, lastDay))
         } else {
           due = new Date(payload.purchase_date)
-          due.setMonth(due.getMonth() + i + 1)
+          const dueDay = due.getDate()
+          const totalMonths = due.getMonth() + i + 1
+          const dueTargetYear = due.getFullYear() + Math.floor(totalMonths / 12)
+          const dueTargetMonth = totalMonths % 12
+          const lastDay = new Date(dueTargetYear, dueTargetMonth + 1, 0).getDate()
+          due = new Date(dueTargetYear, dueTargetMonth, Math.min(dueDay, lastDay))
         }
         const data = {
           ...rest,

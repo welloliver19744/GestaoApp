@@ -240,7 +240,7 @@ export function Goals() {
             const isInvestment = g.goal_type === 'investment'
             const pct = Math.min((g.current_amount / g.target_amount) * 100, 100)
             const remaining = g.target_amount - g.current_amount
-            const initialAmt = g.initial_amount || g.current_amount
+            const initialAmt = g.initial_amount ?? g.current_amount
             const appreciation = isInvestment && initialAmt > 0 ? ((g.current_amount - initialAmt) / initialAmt) * 100 : 0
             return (
               <Card key={g.id}>

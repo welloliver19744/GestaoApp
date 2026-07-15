@@ -110,5 +110,40 @@ export function compressImage(
     }
     img.onerror = reject
     img.src = URL.createObjectURL(file)
+    const cleanup = () => {
+      setTimeout(() => URL.revokeObjectURL(img.src), 100)
+    }
+    img.onload = () => { cleanup(); /* resolve continua abaixo */ }
+    img.onerror = () => { cleanup(); reject() }
   })
+}
+
+export function parseAmount(v: unknown): number {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const cleaned = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')
+    const n = parseFloat(cleaned)
+    return isNaN(n) ? 0 : n
+  }
+  return 0
+}
+
+export function normalizeDateStr(v: unknown): string {
+  if (typeof v !== 'string') return ''
+  // já está em YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  // DD/MM/YYYY ou DD-MM-YYYY
+  const m = v.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`
+  // MM/DD/YYYY
+  const m2 = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (m2) return `${m2[3]}-${m2[1]}-${m2[2]}`
+  return ''
+}
+
+export function formatDateBR(dateStr: string): string {
+  if (!dateStr || !dateStr.includes('-')) return dateStr
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  return `${parts[2]}/${parts[1]}/${parts[0]}`
 }

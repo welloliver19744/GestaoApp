@@ -28,7 +28,6 @@ export function useCards() {
     try {
       const token = await ensureToken().catch(() => '')
       if (!token) { setLoading(false); return }
-      await invalidateApiCache('/api/cards/list')
       const res = await window.fetch(`${getBaseUrl()}/api/cards/list?_=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })

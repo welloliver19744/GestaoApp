@@ -1,3 +1,5 @@
+import { parseAmount, normalizeDateStr } from './utils'
+
 export interface AIConfig {
   provider: string
   apiKey: string
@@ -84,32 +86,6 @@ function extractJSON(text: string) {
   return JSON.parse(text.slice(start, end + 1))
 }
 
-function parseAmount(v: unknown): number {
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const cleaned = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')
-    const n = parseFloat(cleaned)
-    return isNaN(n) ? 0 : n
-  }
-  return 0
-}
-
-function normalizeDateStr(raw: unknown): string {
-  if (!raw || typeof raw !== 'string') return ''
-  // já está em YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
-  // DD/MM/YYYY ou DD-MM-YYYY
-  const m = raw.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/)
-  if (m) return `${m[3]}-${m[2]}-${m[1]}`
-  // MM/DD/YYYY
-  const m2 = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
-  if (m2) {
-    const [, mm, dd, yyyy] = m2
-    return `${yyyy}-${mm}-${dd}`
-  }
-  return ''
-}
-
 function normalizeScannedJSON(raw: Record<string, unknown>) {
   const rawDate = (raw.purchase_date ?? raw.data_compra ?? raw.data ?? raw.due_date ?? raw.vencimento ?? raw.date ?? '') as string
   return {
@@ -122,10 +98,9 @@ function normalizeScannedJSON(raw: Record<string, unknown>) {
 }
 
 function cleanJSONResponse(text: string): string {
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
-  if (start === -1 || end === -1 || end < start) throw new Error('Resposta da IA não contém JSON válido')
-  return text.slice(start, end + 1)
+  // Reusa extractJSON para achar os boundaries, retorna a string limpa
+  const parsed = extractJSON(text)
+  return JSON.stringify(parsed)
 }
 
 export async function scanBillWithAI(imageBase64: string): Promise<{

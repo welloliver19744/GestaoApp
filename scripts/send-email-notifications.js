@@ -3,7 +3,11 @@ const fs = require('fs')
 const path = require('path')
 
 const PB_URL = process.env.PB_URL || 'http://localhost:8091'
-const PUSH_SECRET = process.env.PUSH_SECRET || 'changeme-push-secret-2026'
+const PUSH_SECRET = process.env.PUSH_SECRET
+if (!PUSH_SECRET) {
+  console.error('PUSH_SECRET environment variable is required.')
+  process.exit(1)
+}
 
 let config
 try {
@@ -15,7 +19,7 @@ try {
 
 if (!config.host || !config.user || !config.pass) {
   console.error('SMTP not configured. Fill host, user and pass in email-config.json')
-  process.exit(0)
+  process.exit(1)
 }
 
 async function api(path, headers) {

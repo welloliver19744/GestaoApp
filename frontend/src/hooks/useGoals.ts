@@ -43,7 +43,11 @@ export function useGoals() {
   }
 
   const updateProgress = async (goal: Goal, amount: number) => {
-    await goalsCollection.update(goal.id, { current_amount: goal.current_amount + amount })
+    // Busca o valor mais recente do servidor para evitar race condition
+    // (duas chamadas rápidas lendo o mesmo closure stale sobrescreveriam uma a outra)
+    const latest = await goalsCollection.getOne(goal.id)
+    const currentAmount = (latest?.current_amount || 0) + amount
+    await goalsCollection.update(goal.id, { current_amount: currentAmount })
     await fetch()
   }
 

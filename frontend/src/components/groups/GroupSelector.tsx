@@ -11,9 +11,9 @@ export function GroupSelector() {
 
   const handleChange = (value: string) => {
     if (value) {
-      setSearchParams({ group: value })
+      setSearchParams(prev => { prev.set('group', value); return prev })
     } else {
-      setSearchParams({})
+      setSearchParams(prev => { prev.delete('group'); return prev })
     }
   }
 

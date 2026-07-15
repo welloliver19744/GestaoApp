@@ -81,12 +81,13 @@ routerAdd('POST', '/api/groups/update', function(c) {
 
     var collection = $app.findCollectionByNameOrId('groups');
     var existing = $app.findRecordById(collection, id);
-    if (existing) {
-      existing.set('name', body.name || '');
-      existing.set('description', body.description || '');
-      existing.set('members', JSON.stringify(members));
-      $app.save(existing);
-    }
+    if (!existing) return c.json(404, { error: 'not found' });
+    if (String(existing.get('created_by') || '') !== owner) return c.json(403, { error: 'forbidden' });
+
+    existing.set('name', body.name || '');
+    existing.set('description', body.description || '');
+    existing.set('members', JSON.stringify(members));
+    $app.save(existing);
     return c.json(200, { id: id, name: body.name, description: body.description, members: members });
   } catch (err) {
     return c.json(500, { error: String(err) });
@@ -102,6 +103,12 @@ routerAdd('POST', '/api/groups/delete', function(c) {
     var id = String((info.body && info.body.id) || '');
     if (!id) return c.json(400, { error: 'id required' });
     var collection = $app.findCollectionByNameOrId('groups');
+
+    // Verifica se o grupo existe e pertence ao usuário
+    var existing = $app.findRecordById(collection, id);
+    if (!existing) return c.json(404, { error: 'not found' });
+    if (String(existing.get('created_by') || '') !== owner) return c.json(403, { error: 'forbidden' });
+
     var record = new Record(collection);
     record.set('id', id);
     record.markAsNotNew();

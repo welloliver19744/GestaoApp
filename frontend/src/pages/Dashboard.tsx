@@ -12,7 +12,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { DonutChart } from '../components/ui/DonutChart'
 import { useToast } from '../components/ui/Toast'
-import { formatCurrency, formatMonthYear, txInMonth } from '../lib/utils'
+import { formatCurrency, formatMonthYear, formatDateBR, txInMonth } from '../lib/utils'
 import { generateInsights, getAIConfig } from '../lib/ai'
 import type { Transaction } from '../api/types'
 
@@ -28,11 +28,6 @@ interface PurchaseGroup {
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { TrendingUp, Wallet, Plus, ChevronLeft, ChevronRight, X, Brain, MessageSquare, Loader2, Sparkles, BarChart3, Target, TrendingDown, Plane, Store, ChevronDown } from 'lucide-react'
 import { parseTags } from '../lib/tags'
-
-function formatDateBR(dateStr: string) {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
-}
 
 export function Dashboard() {
   const { data: transactions, loading, togglePaid, create } = useTransactions({ sort: '+due_date' })

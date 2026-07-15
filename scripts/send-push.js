@@ -1,8 +1,19 @@
 const webpush = require('web-push')
 
 const PB_URL = process.env.PB_URL || 'http://localhost:8091'
-const PUSH_SECRET = process.env.PUSH_SECRET || 'changeme-push-secret-2026'
-const VAPID_KEYS = require('./vapid-keys.json')
+const PUSH_SECRET = process.env.PUSH_SECRET
+if (!PUSH_SECRET) {
+  console.error('PUSH_SECRET environment variable is required.')
+  process.exit(1)
+}
+
+let VAPID_KEYS
+try {
+  VAPID_KEYS = require('./vapid-keys.json')
+} catch {
+  console.error('vapid-keys.json not found. Generate with: npx web-push generate-vapid-keys --json > scripts/vapid-keys.json')
+  process.exit(1)
+}
 
 webpush.setVapidDetails(
   'mailto:welloliver@gmail.com',

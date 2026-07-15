@@ -10,15 +10,19 @@ export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
     try {
       await login(email, password)
       navigate('/')
     } catch {
       setError('Email ou senha inválidos')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -61,7 +65,7 @@ export function Login() {
             <p className="text-sm text-neon-red bg-neon-red/5 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          <Button type="submit" className="w-full">Entrar</Button>
+          <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
         </form>
       </div>
     </div>

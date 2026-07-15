@@ -75,7 +75,7 @@ export function ReceiptGallery() {
               onClick={clearDayFilter}
               className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full bg-neon-amber/15 text-neon-amber text-xs font-medium hover:bg-neon-amber/25 transition-all"
             >
-              <X size={12} />{selectedDay.split('-').reverse().join('/')}
+              <X size={12} />{formatDateBR(selectedDay)}
             </button>
           )}
           <input ref={monthInputRef} type="month" value={monthStr} onChange={e => { const [y, m] = e.target.value.split('-').map(Number); setMonthOffset((y - today.getFullYear()) * 12 + m - 1 - today.getMonth()); setSelectedDay(null) }} className="hidden" />
