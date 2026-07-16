@@ -214,3 +214,5 @@
 > **Workflow definido:** Alterar código → atualizar docs .md → git commit → git push → Vercel auto-deploy.
 > **Vercel:** Projeto `gestao-app` (wellington-s-projects1) em https://gestao-app-three.vercel.app.
 > Config rootDirectory=`frontend` via vercel.json + frontend/vercel.json com framework=vite.
+> **Conexão PocketBase via Cloudflare:** `api-gestao.housecloud.tec.br` → PocketBase (8091). CORS configurado no PocketBase.
+> **VITE_POCKETBASE_URL** configurada no Vercel (Production).

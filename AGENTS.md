@@ -40,11 +40,24 @@ Este documento é a fonte única da verdade sobre o projeto Gestão Casa. Consul
 
 ## 3. Architecture
 
-### Diagrama de Rede
+### Diagrama de Rede (Produção — Servidor)
 ```
-Browser → Nginx (porta 3001) → /api/ → Kong (8090) → PocketBase (8091)
-                                        → Supabase services
+Browser → Nginx (porta 3001) → /api/ → PocketBase (8090)
 ```
+
+### Diagrama de Rede (Vercel + Cloudflare)
+```
+Browser (HTTPS) → Vercel (gestao-app-three.vercel.app)
+                → Cloudflare (api-gestao.housecloud.tec.br)
+                → PocketBase (137.131.187.156:8091)
+```
+
+### Portas do Servidor
+| Porta | Serviço | Acesso |
+|-------|---------|--------|
+| 3001 | Nginx (frontend React) | http://137.131.187.156:3001 |
+| 8091 | PocketBase API + Admin | http://137.131.187.156:8091, https://api-gestao.housecloud.tec.br |
+| 8090 | Kong (NÃO usado pelo Gestão Casa) | — |
 
 ### Containers Docker
 - **gestaocasa-frontend** — Nginx servindo o build React (porta 3001 → 80)
@@ -360,6 +373,22 @@ npx vercel --prod --yes --scope wellington-s-projects1
 - **Build Command:** `npm run build`
 - **Output Directory:** `dist`
 - **URL Produção:** https://gestao-app-three.vercel.app
+#### Variáveis de Ambiente do Vercel
+- `VITE_POCKETBASE_URL=https://api-gestao.housecloud.tec.br` (Production)
+  - Aponta pro PocketBase via Cloudflare tunnel (porta 8091, direto sem Kong)
+  - Configurada via: `vercel env add VITE_POCKETBASE_URL production`
+
+#### CORS no PocketBase (obrigatório para Vercel)
+O PocketBase precisa aceitar requisições do domínio do Vercel:
+1. Admin em http://137.131.187.156:8091/_/ → **Settings** → **Application**
+2. Em **CORS (Allowed Origins)** adicionar: `https://gestao-app-three.vercel.app`
+3. Salvar
+
+#### Dependências Externas
+- **Cloudflare:** Subdomínio `api-gestao.housecloud.tec.br` → `http://137.131.187.156:8091`
+  - Tunnel direto pro PocketBase (sem Kong)
+  - Fornece HTTPS para o Vercel se conectar sem mixed content
+- **Kong (porta 8090):** Não é usado pelo Gestão Casa. É de outro projeto (Supabase).
 
 #### Deploy Autenticado (só CLI)
 ```bash
