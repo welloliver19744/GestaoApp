@@ -217,3 +217,4 @@
 > **Conexão PocketBase via Cloudflare:** `api-gestao.housecloud.tec.br` → PocketBase (8091). CORS configurado no PocketBase.
 > **VITE_POCKETBASE_URL** configurada no Vercel (Production).
 > **Root Directory** configurado como `frontend` no dashboard da Vercel.
+> **Production Branch** configurado como `master`.
